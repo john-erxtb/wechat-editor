@@ -177,6 +177,16 @@ html, body {
     border-radius: 50%;
 }
 
+/* ========== 编辑工作区（组件面板 + 编辑器横向排列） ========== */
+.editor-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    overflow: hidden;
+    min-height: 0;
+}
+
 /* ========== 编辑器容器 ========== */
 .editor-container {
     flex: 1;
@@ -186,6 +196,7 @@ html, body {
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    min-width: 0;
 }
 
 /* ========== Quill 工具栏 ========== */
@@ -409,7 +420,7 @@ html, body {
 
 /* ========== 组件面板样式 ========== */
 .component-panel {
-    width: 320px;
+    width: 280px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -417,7 +428,6 @@ html, body {
     flex-direction: column;
     overflow: hidden;
     flex-shrink: 0;
-    max-height: calc(100vh - 120px);
 }
 
 .component-panel-header {

@@ -46,36 +46,38 @@
                     </div>
                 </div>
 
-                <!-- 组件面板 -->
-                <div class="component-panel">
-                    <div class="component-panel-header">
-                        <h3>📦 插入组件</h3>
-                        <div class="save-status" id="save-status">
-                            <span class="save-dot"></span>
-                            <span class="save-text">已保存</span>
+                <!-- 编辑工作区：组件面板 + 编辑器 横向排列 -->
+                <div class="editor-workspace">
+                    <!-- 组件面板 -->
+                    <div class="component-panel">
+                        <div class="component-panel-header">
+                            <h3>📦 插入组件</h3>
+                            <div class="save-status" id="save-status">
+                                <span class="save-dot"></span>
+                                <span class="save-text">已保存</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 颜色选择器 -->
+                        <div class="color-picker-section">
+                            <span class="color-picker-label">主题色：</span>
+                            <div class="color-picker" id="component-color-picker">
+                                <!-- 颜色由JS动态生成 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 组件分类Tab -->
+                        <div class="component-tabs" id="component-tabs">
+                            <!-- Tab由JS动态生成 -->
+                        </div>
+                        
+                        <!-- 组件列表 -->
+                        <div class="component-list" id="component-list">
+                            <!-- 组件由JS动态生成 -->
                         </div>
                     </div>
-                    
-                    <!-- 颜色选择器 -->
-                    <div class="color-picker-section">
-                        <span class="color-picker-label">主题色：</span>
-                        <div class="color-picker" id="component-color-picker">
-                            <!-- 颜色由JS动态生成 -->
-                        </div>
-                    </div>
-                    
-                    <!-- 组件分类Tab -->
-                    <div class="component-tabs" id="component-tabs">
-                        <!-- Tab由JS动态生成 -->
-                    </div>
-                    
-                    <!-- 组件列表 -->
-                    <div class="component-list" id="component-list">
-                        <!-- 组件由JS动态生成 -->
-                    </div>
-                </div>
 
-                <!-- 编辑器容器 -->
+                    <!-- 编辑器容器 -->
                 <div class="editor-container">
                     <!-- Quill 工具栏 -->
                     <div id="toolbar">
@@ -195,6 +197,7 @@
                     <!-- Quill 编辑器主体 -->
                     <div id="editor"></div>
                 </div>
+                </div><!-- editor-workspace 结束 -->
             </section>
 
             <!-- 右侧预览区 -->
