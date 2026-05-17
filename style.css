@@ -1,0 +1,563 @@
+/**
+ * 微信公众号编辑器 - 页面样式
+ * 包含编辑器布局、工具栏、手机预览框等样式
+ */
+
+/* ========== 基础重置 ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ========== 页面布局 ========== */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ========== 顶部导航栏 ========== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.app-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* ========== 按钮样式 ========== */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(56, 239, 125, 0.4);
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #eee;
+}
+
+/* ========== 主内容区 ========== */
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ========== 左侧编辑区 ========== */
+.editor-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* ========== 模板选择器 ========== */
+.template-selector {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.template-selector h3 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.template-list {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.template-item {
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.template-item:hover {
+    transform: translateY(-2px);
+}
+
+.template-item.active {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.template-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+/* ========== 编辑器容器 ========== */
+.editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* ========== Quill 工具栏 ========== */
+.ql-toolbar.ql-snow {
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 12px;
+    background: #fafafa;
+}
+
+.ql-toolbar .ql-formats {
+    margin-right: 16px;
+}
+
+.ql-toolbar .ql-picker-label {
+    padding: 4px 8px;
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar .ql-picker-label:hover {
+    color: #667eea;
+}
+
+.ql-toolbar button.ql-active,
+.ql-toolbar .ql-picker-label.ql-active {
+    color: #667eea;
+}
+
+.ql-toolbar .ql-stroke {
+    stroke: #666;
+}
+
+.ql-toolbar button:hover .ql-stroke,
+.ql-toolbar button.ql-active .ql-stroke {
+    stroke: #667eea;
+}
+
+.ql-toolbar .ql-fill {
+    fill: #666;
+}
+
+.ql-toolbar button:hover .ql-fill,
+.ql-toolbar button.ql-active .ql-fill {
+    fill: #667eea;
+}
+
+/* ========== Quill 编辑区 ========== */
+.ql-container.ql-snow {
+    border: none;
+    flex: 1;
+    overflow-y: auto;
+    font-family: inherit;
+    font-size: 16px;
+}
+
+.ql-editor {
+    padding: 24px;
+    min-height: 400px;
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+}
+
+.ql-editor:focus {
+    outline: none;
+}
+
+.ql-editor.ql-blank::before {
+    color: #ccc;
+    font-style: normal;
+    left: 24px;
+}
+
+/* ========== 右侧预览区 ========== */
+.preview-section {
+    width: 420px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.preview-title {
+    color: white;
+    font-size: 14px;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+/* ========== iPhone 模拟器 ========== */
+.iphone-frame {
+    width: 375px;
+    height: 700px;
+    background: #1a1a1a;
+    border-radius: 40px;
+    padding: 12px;
+    box-shadow: 
+        0 0 0 2px #333,
+        0 20px 60px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.iphone-frame::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 28px;
+    background: #1a1a1a;
+    border-radius: 20px;
+    z-index: 10;
+}
+
+.iphone-screen {
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+}
+
+.iphone-notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 30px;
+    background: #1a1a1a;
+    border-radius: 0 0 20px 20px;
+    z-index: 5;
+}
+
+.iphone-status-bar {
+    height: 44px;
+    padding: 12px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: white;
+    position: relative;
+    z-index: 1;
+}
+
+.status-time {
+    font-weight: 600;
+}
+
+.status-icons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* ========== 预览内容区 ========== */
+.preview-content-wrapper {
+    height: calc(100% - 44px);
+    overflow-y: auto;
+    background: white;
+}
+
+.preview-content {
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.preview-content h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 12px 0 8px;
+    line-height: 1.4;
+}
+
+.preview-content h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 10px 0 6px;
+    line-height: 1.4;
+}
+
+.preview-content h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 8px 0 4px;
+}
+
+.preview-content p {
+    margin: 8px 0;
+    line-height: 1.7;
+}
+
+.preview-content blockquote {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border-left: 3px solid #ccc;
+    background: #f9f9f9;
+}
+
+.preview-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 8px 0;
+}
+
+.preview-content ul, 
+.preview-content ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.preview-content li {
+    margin: 4px 0;
+}
+
+/* 经典蓝模板预览 */
+.preview-content.template-classicBlue h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 6px; }
+.preview-content.template-classicBlue h2 { color: #1a73e8; }
+.preview-content.template-classicBlue h3 { color: #4285f4; }
+.preview-content.template-classicBlue blockquote { background: #e8f0fe; border-left-color: #1a73e8; }
+.preview-content.template-classicBlue strong { color: #1a73e8; }
+
+/* 素雅绿模板预览 */
+.preview-content.template-elegantGreen h1 { color: #2e7d32; border-left: 4px solid #4caf50; padding-left: 12px; }
+.preview-content.template-elegantGreen h2 { color: #388e3c; }
+.preview-content.template-elegantGreen h3 { color: #43a047; }
+.preview-content.template-elegantGreen blockquote { background: #e8f5e9; border-left-style: dashed; border-left-color: #4caf50; font-style: italic; }
+.preview-content.template-elegantGreen strong { color: #2e7d32; }
+
+/* 暖橘模板预览 */
+.preview-content.template-warmOrange h1 { color: #e65100; text-align: center; }
+.preview-content.template-warmOrange h2 { color: #f57c00; border-top: 2px dashed #ffcc80; border-bottom: 2px dashed #ffcc80; padding: 6px 0; }
+.preview-content.template-warmOrange h3 { color: #ff6d00; }
+.preview-content.template-warmOrange blockquote { background: #fff3e0; border-left-color: #ff6d00; }
+.preview-content.template-warmOrange strong { color: #e65100; }
+
+/* 墨韵模板预览 */
+.preview-content.template-inkStyle { font-family: "Noto Serif SC", serif; }
+.preview-content.template-inkStyle h1 { color: #212121; text-align: center; letter-spacing: 4px; }
+.preview-content.template-inkStyle h2 { color: #424242; text-align: center; letter-spacing: 2px; }
+.preview-content.template-inkStyle h3 { color: #616161; }
+.preview-content.template-inkStyle blockquote { background: rgba(33, 33, 33, 0.03); border: 1px solid #e0e0e0; border-left-color: #212121; }
+.preview-content.template-inkStyle p { text-indent: 2em; }
+
+/* 极简灰模板预览 */
+.preview-content.template-minimalGray h1 { color: #000; letter-spacing: -0.5px; }
+.preview-content.template-minimalGray h2 { color: #000; letter-spacing: -0.3px; }
+.preview-content.template-minimalGray blockquote { background: transparent; border-left-color: #000; padding-left: 16px; color: #757575; }
+
+/* ========== Toast 提示 ========== */
+.toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: 12px 24px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.toast.error {
+    background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+}
+
+/* ========== 响应式布局 ========== */
+@media (max-width: 900px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .preview-section {
+        width: 100%;
+        padding: 16px;
+    }
+    
+    .iphone-frame {
+        width: 320px;
+        height: 580px;
+    }
+    
+    .editor-section {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    .header {
+        padding: 10px 16px;
+    }
+    
+    .app-title {
+        font-size: 16px;
+    }
+    
+    .btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .btn span {
+        display: none;
+    }
+    
+    .template-item {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .ql-toolbar.ql-snow {
+        padding: 8px;
+    }
+    
+    .ql-toolbar .ql-formats {
+        margin-right: 8px;
+    }
+}
+
+/* ========== 滚动条样式 ========== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* ========== 提示信息 ========== */
+.help-text {
+    color: #888;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+/* ========== 分隔线样式 ========== */
+.ql-editor hr {
+    border: none;
+    height: 1px;
+    background: #ddd;
+    margin: 16px 0;
+}
+
+/* ========== 链接样式 ========== */
+.ql-editor a {
+    color: #1a73e8;
+    text-decoration: none;
+}
