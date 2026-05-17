@@ -17,8 +17,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initQuillEditor();
     initTemplateSelector();
     initActionButtons();
+    initAutoSave();
+    initComponentPanel();
     updateTime();
     setInterval(updateTime, 1000);
+    
+    // 尝试恢复上次使用的模板
+    const savedTemplate = restoreTemplateFromStorage();
+    if (savedTemplate !== currentTemplate) {
+        switchTemplate(savedTemplate);
+    }
 });
 
 /**
@@ -607,11 +615,443 @@ function fallbackCopy(html) {
  * 清空编辑器
  */
 function clearEditor() {
-    if (quill.getText().trim() && !confirm('确定要清空所有内容吗？')) {
+    if (quill.getText().trim() && !confirm('确定要清空所有内容吗？此操作将同时清除本地保存的草稿。')) {
         return;
     }
     quill.setText('');
+    // 清除本地存储的草稿
+    clearDraft();
     showToast('内容已清空');
+}
+
+// ==================== 本地自动保存 ====================
+
+const STORAGE_KEY = 'wechat_editor_draft';
+const STORAGE_TEMPLATE_KEY = 'wechat_editor_template';
+let autoSaveTimer = null;
+let isContentChanged = false;
+
+/**
+ * 初始化自动保存
+ */
+function initAutoSave() {
+    // 检查是否有草稿
+    checkDraft();
+    
+    // 监听内容变化
+    quill.on('text-change', function() {
+        isContentChanged = true;
+        updateSaveStatus('unsaved');
+        
+        // 防抖自动保存
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+        }
+        autoSaveTimer = setTimeout(() => {
+            saveDraft();
+        }, 30000); // 30秒后自动保存
+    });
+    
+    // 监听模板变化
+    const originalSwitchTemplate = window.switchTemplate;
+    window.switchTemplate = function(templateId) {
+        originalSwitchTemplate(templateId);
+        saveTemplateToStorage(templateId);
+    };
+    
+    // 页面离开前保存
+    window.addEventListener('beforeunload', function(e) {
+        if (isContentChanged) {
+            saveDraft();
+        }
+    });
+    
+    // 定期保存检查（每10秒检查一次是否需要保存）
+    setInterval(() => {
+        if (isContentChanged) {
+            saveDraft();
+        }
+    }, 10000);
+}
+
+/**
+ * 保存草稿到本地存储
+ */
+function saveDraft() {
+    try {
+        updateSaveStatus('saving');
+        
+        const content = quill.root.innerHTML;
+        const text = quill.getText();
+        
+        // 不保存空白内容
+        if (!text.trim()) {
+            return;
+        }
+        
+        const draft = {
+            content: content,
+            template: currentTemplate,
+            savedAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        isContentChanged = false;
+        
+        setTimeout(() => {
+            updateSaveStatus('saved');
+        }, 500);
+    } catch (e) {
+        console.error('保存草稿失败:', e);
+        updateSaveStatus('error');
+    }
+}
+
+/**
+ * 保存当前模板到存储
+ */
+function saveTemplateToStorage(templateId) {
+    try {
+        localStorage.setItem(STORAGE_TEMPLATE_KEY, templateId);
+    } catch (e) {
+        console.error('保存模板失败:', e);
+    }
+}
+
+/**
+ * 从存储恢复模板
+ */
+function restoreTemplateFromStorage() {
+    try {
+        const savedTemplate = localStorage.getItem(STORAGE_TEMPLATE_KEY);
+        if (savedTemplate && TEMPLATES[savedTemplate]) {
+            return savedTemplate;
+        }
+    } catch (e) {
+        console.error('恢复模板失败:', e);
+    }
+    return 'classicBlue';
+}
+
+/**
+ * 检查并提示恢复草稿
+ */
+function checkDraft() {
+    try {
+        const savedDraft = localStorage.getItem(STORAGE_KEY);
+        if (!savedDraft) return;
+        
+        const draft = JSON.parse(savedDraft);
+        if (!draft.content || !draft.template) return;
+        
+        // 显示恢复提示
+        showDraftRecovery(draft);
+    } catch (e) {
+        console.error('检查草稿失败:', e);
+    }
+}
+
+/**
+ * 显示草稿恢复提示
+ */
+function showDraftRecovery(draft) {
+    // 创建恢复提示框
+    const recoveryEl = document.createElement('div');
+    recoveryEl.className = 'draft-recovery';
+    recoveryEl.innerHTML = `
+        <span class="draft-recovery-text">📄 发现上次编辑的草稿，是否恢复？</span>
+        <div class="draft-recovery-actions">
+            <button class="btn-draft-discard" id="discard-draft">丢弃</button>
+            <button class="btn-draft-recover" id="recover-draft">恢复</button>
+        </div>
+    `;
+    document.body.appendChild(recoveryEl);
+    
+    // 显示动画
+    requestAnimationFrame(() => {
+        recoveryEl.classList.add('show');
+    });
+    
+    // 恢复按钮
+    document.getElementById('recover-draft').addEventListener('click', function() {
+        recoverDraft(draft);
+        recoveryEl.classList.remove('show');
+        setTimeout(() => recoveryEl.remove(), 300);
+    });
+    
+    // 丢弃按钮
+    document.getElementById('discard-draft').addEventListener('click', function() {
+        clearDraft();
+        recoveryEl.classList.remove('show');
+        setTimeout(() => recoveryEl.remove(), 300);
+    });
+}
+
+/**
+ * 恢复草稿
+ */
+function recoverDraft(draft) {
+    // 恢复模板
+    if (TEMPLATES[draft.template]) {
+        currentTemplate = draft.template;
+        initTemplateSelector();
+    }
+    
+    // 恢复内容
+    quill.root.innerHTML = draft.content;
+    syncToPreview();
+    
+    showToast('草稿已恢复', 'success');
+}
+
+/**
+ * 清除草稿
+ */
+function clearDraft() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+        isContentChanged = false;
+    } catch (e) {
+        console.error('清除草稿失败:', e);
+    }
+}
+
+/**
+ * 更新保存状态显示
+ */
+function updateSaveStatus(status) {
+    const statusEl = document.getElementById('save-status');
+    if (!statusEl) return;
+    
+    const dot = statusEl.querySelector('.save-dot');
+    const text = statusEl.querySelector('.save-text');
+    
+    statusEl.classList.remove('saving', 'unsaved');
+    
+    switch (status) {
+        case 'saving':
+            statusEl.classList.add('saving');
+            text.textContent = '保存中...';
+            break;
+        case 'saved':
+            text.textContent = '已保存';
+            break;
+        case 'unsaved':
+            statusEl.classList.add('unsaved');
+            text.textContent = '未保存';
+            break;
+        default:
+            text.textContent = '已保存';
+    }
+}
+
+// ==================== 组件面板 ====================
+
+let currentCategory = 'card';
+let currentColor = '#1a73e8';
+
+/**
+ * 初始化组件面板
+ */
+function initComponentPanel() {
+    // 初始化颜色选择器
+    initColorPicker();
+    
+    // 初始化分类Tab
+    initComponentTabs();
+    
+    // 初始化组件列表
+    renderComponentList();
+    
+    // 初始化预览弹窗
+    initPreviewModal();
+}
+
+/**
+ * 初始化颜色选择器
+ */
+function initColorPicker() {
+    const picker = document.getElementById('component-color-picker');
+    if (!picker) return;
+    
+    // 从当前模板获取主题色
+    currentColor = getCurrentThemeColor();
+    
+    // 渲染颜色色块
+    picker.innerHTML = PRESET_COLORS.map(color => `
+        <span class="color-swatch ${color === currentColor ? 'active' : ''}" 
+              data-color="${color}"
+              style="background-color: ${color}; color: ${color};">
+        </span>
+    `).join('');
+    
+    // 绑定点击事件
+    picker.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            picker.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+            currentColor = this.dataset.color;
+            renderComponentList();
+        });
+    });
+}
+
+/**
+ * 初始化组件分类Tab
+ */
+function initComponentTabs() {
+    const tabsContainer = document.getElementById('component-tabs');
+    if (!tabsContainer) return;
+    
+    const categories = getComponentCategories();
+    
+    tabsContainer.innerHTML = categories.map(cat => `
+        <span class="component-tab ${cat.id === currentCategory ? 'active' : ''}" 
+              data-category="${cat.id}">
+            ${cat.icon} ${cat.name}
+        </span>
+    `).join('');
+    
+    // 绑定点击事件
+    tabsContainer.querySelectorAll('.component-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabsContainer.querySelectorAll('.component-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            currentCategory = this.dataset.category;
+            renderComponentList();
+        });
+    });
+}
+
+/**
+ * 渲染组件列表
+ */
+function renderComponentList() {
+    const listContainer = document.getElementById('component-list');
+    if (!listContainer) return;
+    
+    const components = getComponentsByCategory(currentCategory);
+    
+    listContainer.innerHTML = components.map(item => `
+        <div class="component-item" data-component-id="${item.id}">
+            <div class="component-item-icon">${item.icon}</div>
+            <div class="component-item-name">${item.name}</div>
+            <div class="component-item-desc">${item.description}</div>
+        </div>
+    `).join('');
+    
+    // 绑定点击事件
+    listContainer.querySelectorAll('.component-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const componentId = this.dataset.componentId;
+            showComponentPreview(componentId);
+        });
+    });
+}
+
+// ==================== 组件预览和插入 ====================
+
+let currentPreviewComponent = null;
+
+/**
+ * 显示组件预览弹窗
+ */
+function showComponentPreview(componentId) {
+    const components = getComponentsByCategory(currentCategory);
+    const component = components.find(c => c.id === componentId);
+    
+    if (!component) return;
+    
+    currentPreviewComponent = component;
+    
+    // 创建弹窗
+    let modal = document.querySelector('.component-preview-modal');
+    if (!modal) {
+        modal = createPreviewModal();
+        document.body.appendChild(modal);
+    }
+    
+    // 填充内容
+    modal.querySelector('.component-preview-header h4').textContent = component.name;
+    modal.querySelector('.component-preview-body').innerHTML = component.getHtml(currentColor);
+    
+    // 显示弹窗
+    modal.classList.add('show');
+}
+
+/**
+ * 创建预览弹窗DOM
+ */
+function createPreviewModal() {
+    const modal = document.createElement('div');
+    modal.className = 'component-preview-modal';
+    modal.innerHTML = `
+        <div class="component-preview-content">
+            <div class="component-preview-header">
+                <h4>组件预览</h4>
+                <button class="component-preview-close">×</button>
+            </div>
+            <div class="component-preview-body"></div>
+            <div class="component-preview-actions">
+                <button class="btn-preview">取消</button>
+                <button class="btn-insert">插入到编辑器</button>
+            </div>
+        </div>
+    `;
+    
+    // 关闭按钮
+    modal.querySelector('.component-preview-close').addEventListener('click', () => {
+        modal.classList.remove('show');
+    });
+    
+    // 取消按钮
+    modal.querySelector('.btn-preview').addEventListener('click', () => {
+        modal.classList.remove('show');
+    });
+    
+    // 插入按钮
+    modal.querySelector('.btn-insert').addEventListener('click', () => {
+        insertComponent();
+        modal.classList.remove('show');
+    });
+    
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
+    
+    return modal;
+}
+
+/**
+ * 初始化预览弹窗（备用）
+ */
+function initPreviewModal() {
+    // 弹窗会在首次需要时动态创建
+}
+
+/**
+ * 插入组件到编辑器
+ */
+function insertComponent() {
+    if (!currentPreviewComponent) return;
+    
+    try {
+        const html = currentPreviewComponent.getHtml(currentColor);
+        
+        // 使用Quill API插入HTML
+        quill.clipboard.dangerouslyPasteHTML(html);
+        
+        // 同步预览
+        syncToPreview();
+        
+        showToast(`「${currentPreviewComponent.name}」已插入`, 'success');
+    } catch (e) {
+        console.error('插入组件失败:', e);
+        showToast('插入失败，请重试', 'error');
+    }
 }
 
 // ==================== 工具函数 ====================

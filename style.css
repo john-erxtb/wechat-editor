@@ -113,6 +113,8 @@ html, body {
     display: flex;
     flex: 1;
     overflow: hidden;
+    gap: 16px;
+    padding: 20px;
 }
 
 /* ========== 左侧编辑区 ========== */
@@ -120,8 +122,9 @@ html, body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    gap: 16px;
     overflow: hidden;
+    min-width: 0;
 }
 
 /* ========== 模板选择器 ========== */
@@ -404,6 +407,344 @@ html, body {
     margin: 4px 0;
 }
 
+/* ========== 组件面板样式 ========== */
+.component-panel {
+    width: 320px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    max-height: calc(100vh - 120px);
+}
+
+.component-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eee;
+    background: #fafafa;
+}
+
+.component-panel-header h3 {
+    font-size: 14px;
+    color: #333;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* 保存状态 */
+.save-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #666;
+}
+
+.save-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+}
+
+.save-status.saving .save-dot {
+    background: #ff9800;
+    animation: pulse 1s infinite;
+}
+
+.save-status.unsaved .save-dot {
+    background: #ff9800;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 颜色选择器 */
+.color-picker-section {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-picker-label {
+    font-size: 12px;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
+}
+
+/* 组件分类Tab */
+.component-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+
+.component-tab {
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    color: #666;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.component-tab:hover {
+    background: #f0f0f0;
+}
+
+.component-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: transparent;
+}
+
+/* 组件列表 */
+.component-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    align-content: start;
+}
+
+.component-item {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.component-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    transform: translateY(-1px);
+}
+
+.component-item-icon {
+    font-size: 18px;
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.component-item-name {
+    font-size: 11px;
+    color: #333;
+    text-align: center;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.component-item-desc {
+    font-size: 9px;
+    color: #999;
+    text-align: center;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+/* 组件预览弹窗 */
+.component-preview-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.component-preview-modal.show {
+    display: flex;
+}
+
+.component-preview-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    max-height: 80vh;
+    width: 90%;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.component-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.component-preview-header h4 {
+    margin: 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.component-preview-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.component-preview-close:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.component-preview-body {
+    padding: 18px;
+    max-height: 50vh;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+.component-preview-actions {
+    padding: 14px 18px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* 按钮样式 */
+.btn-preview {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-preview:hover {
+    background: #f5f5f5;
+}
+
+.btn-insert {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-insert:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 草稿恢复提示 */
+.draft-recovery {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 10px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    gap: 14px;
+}
+
+.draft-recovery.show {
+    display: flex;
+}
+
+.draft-recovery-text {
+    font-size: 13px;
+    color: #333;
+}
+
+.draft-recovery-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-draft-recover {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 5px;
+    background: #667eea;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.btn-draft-discard {
+    padding: 7px 14px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+}
+
 /* 经典蓝模板预览 */
 .preview-content.template-classicBlue h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 6px; }
 .preview-content.template-classicBlue h2 { color: #1a73e8; }
@@ -437,6 +778,79 @@ html, body {
 .preview-content.template-minimalGray h1 { color: #000; letter-spacing: -0.5px; }
 .preview-content.template-minimalGray h2 { color: #000; letter-spacing: -0.3px; }
 .preview-content.template-minimalGray blockquote { background: transparent; border-left-color: #000; padding-left: 16px; color: #757575; }
+
+/* 赤金模板预览 */
+.preview-content.template-redGold h1 { color: #c41e3a; text-align: center; }
+.preview-content.template-redGold h2 { color: #c41e3a; border-left: 4px solid #ffd700; padding-left: 16px; }
+.preview-content.template-redGold h3 { color: #d4382e; }
+.preview-content.template-redGold blockquote { background: #fff5f5; border-left-color: #c41e3a; }
+.preview-content.template-redGold strong { color: #c41e3a; }
+
+/* 碧海模板预览 */
+.preview-content.template-oceanBlue h1 { color: #0077b6; text-align: center; }
+.preview-content.template-oceanBlue h2 { color: #00b4d8; border-bottom: 2px solid #90e0ef; }
+.preview-content.template-oceanBlue h3 { color: #0077b6; }
+.preview-content.template-oceanBlue blockquote { background: #caf0f8; border-left-color: #00b4d8; }
+.preview-content.template-oceanBlue strong { color: #00b4d8; }
+
+/* 暗夜模板预览 */
+.preview-content.template-darkNight { background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%); color: #e0e0e0; }
+.preview-content.template-darkNight h1 { color: #00d4ff; text-align: center; text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+.preview-content.template-darkNight h2 { color: #00d4ff; border-left: 3px solid #7c3aed; }
+.preview-content.template-darkNight h3 { color: #7c3aed; }
+.preview-content.template-darkNight blockquote { background: rgba(124, 58, 237, 0.15); border-left-color: #7c3aed; color: #b0b0b0; }
+.preview-content.template-darkNight strong { color: #00d4ff; }
+
+/* 樱花模板预览 */
+.preview-content.template-sakuraPink h1 { color: #e91e8c; text-align: center; }
+.preview-content.template-sakuraPink h2 { color: #ff69b4; border-bottom: 2px dashed #ffb6c1; }
+.preview-content.template-sakuraPink h3 { color: #e91e8c; }
+.preview-content.template-sakuraPink blockquote { background: #fff0f5; border-left-color: #ff69b4; font-style: italic; }
+.preview-content.template-sakuraPink strong { color: #ff69b4; }
+
+/* 田园模板预览 */
+.preview-content.template-countryside h1 { color: #8b5a2b; text-align: center; }
+.preview-content.template-countryside h2 { color: #cd853f; border-bottom: 2px solid #deb887; }
+.preview-content.template-countryside h3 { color: #8b5a2b; }
+.preview-content.template-countryside blockquote { background: #fff8dc; border-left-color: #cd853f; }
+.preview-content.template-countryside strong { color: #cd853f; }
+.preview-content.template-countryside p { text-indent: 2em; }
+
+/* 科技紫模板预览 */
+.preview-content.template-techPurple h1 { background: linear-gradient(90deg, #9333ea, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.preview-content.template-techPurple h2 { color: #9333ea; border-left: 4px solid #c084fc; }
+.preview-content.template-techPurple h3 { color: #a855f7; }
+.preview-content.template-techPurple blockquote { background: #f3e8ff; border-left-color: #9333ea; }
+.preview-content.template-techPurple strong { color: #a855f7; }
+
+/* 学术模板预览 */
+.preview-content.template-academic h1 { color: #1e3a5f; text-align: center; border-bottom: 3px double #2c5282; }
+.preview-content.template-academic h2 { color: #1e3a5f; border-bottom: 1px solid #a0aec0; }
+.preview-content.template-academic h3 { color: #2c5282; }
+.preview-content.template-academic blockquote { background: #ebf4ff; border-left-color: #2c5282; }
+.preview-content.template-academic strong { color: #1e3a5f; }
+.preview-content.template-academic p { text-indent: 2em; }
+
+/* 节日红模板预览 */
+.preview-content.template-festivalRed h1 { color: #dc2626; text-align: center; text-shadow: 2px 2px 4px rgba(220, 38, 38, 0.2); }
+.preview-content.template-festivalRed h2 { color: #ef4444; text-align: center; border-top: 2px solid #fca5a5; border-bottom: 2px solid #fca5a5; }
+.preview-content.template-festivalRed h3 { color: #dc2626; border-left: 4px solid #ef4444; }
+.preview-content.template-festivalRed blockquote { background: #fef2f2; border-left-color: #dc2626; }
+.preview-content.template-festivalRed strong { color: #dc2626; }
+
+/* 森林模板预览 */
+.preview-content.template-forestGreen h1 { color: #166534; text-align: center; }
+.preview-content.template-forestGreen h2 { color: #22c55e; border-bottom: 2px solid #86efac; }
+.preview-content.template-forestGreen h3 { color: #166534; }
+.preview-content.template-forestGreen blockquote { background: #f0fdf4; border-left-color: #22c55e; }
+.preview-content.template-forestGreen strong { color: #22c55e; }
+
+/* 日出模板预览 */
+.preview-content.template-sunrise h1 { background: linear-gradient(90deg, #f59e0b, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.preview-content.template-sunrise h2 { color: #ea580c; border-left: 4px solid #f59e0b; }
+.preview-content.template-sunrise h3 { color: #f59e0b; }
+.preview-content.template-sunrise blockquote { background: #fffbeb; border-left-color: #f59e0b; }
+.preview-content.template-sunrise strong { color: #ea580c; }
 
 /* ========== Toast 提示 ========== */
 .toast {
