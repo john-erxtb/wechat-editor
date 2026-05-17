@@ -1041,8 +1041,12 @@ function insertComponent() {
     try {
         const html = currentPreviewComponent.getHtml(currentColor);
         
-        // 使用Quill API插入HTML
-        quill.clipboard.dangerouslyPasteHTML(html);
+        // 获取当前光标位置
+        const cursorIndex = quill.getSelection(true);
+        const insertIndex = cursorIndex ? cursorIndex.index : quill.getLength();
+        
+        // 在光标位置插入HTML（不替换现有内容）
+        quill.clipboard.dangerouslyPasteHTML(insertIndex, html);
         
         // 同步预览
         syncToPreview();
