@@ -320,28 +320,34 @@ function applyTemplateStyles(html, templateId) {
  * @param {Object} styles - 样式对象
  */
 function processElements(container, styles) {
-    // 处理h1（跳过组件内部的h1）
+    // 处理h1（跳过组件内部的h1，保留用户对齐）
     container.querySelectorAll('h1').forEach(el => {
         const parentSection = el.closest('section[style]');
         if (parentSection) return;
+        const savedAlign = el.style.textAlign;
         applyInlineStyle(el, styles.h1);
+        if (savedAlign) el.style.textAlign = savedAlign;
     });
     
-    // 处理h2（跳过组件内部的h2）
+    // 处理h2（跳过组件内部的h2，保留用户对齐）
     container.querySelectorAll('h2').forEach(el => {
         const parentSection = el.closest('section[style]');
         if (parentSection) return;
+        const savedAlign = el.style.textAlign;
         applyInlineStyle(el, styles.h2);
+        if (savedAlign) el.style.textAlign = savedAlign;
     });
     
-    // 处理h3（跳过组件内部的h3）
+    // 处理h3（跳过组件内部的h3，保留用户对齐）
     container.querySelectorAll('h3').forEach(el => {
         const parentSection = el.closest('section[style]');
         if (parentSection) return;
+        const savedAlign = el.style.textAlign;
         applyInlineStyle(el, styles.h3);
+        if (savedAlign) el.style.textAlign = savedAlign;
     });
     
-    // 处理p标签（组件内部也应用text-align，但保留已有设置）
+    // 处理p标签（保留用户设置的对齐方式）
     container.querySelectorAll('p').forEach(el => {
         const parentSection = el.closest('section[style]');
         if (parentSection) {
@@ -355,9 +361,8 @@ function processElements(container, styles) {
             return;
         }
         if (!el.closest('blockquote')) {
-            // 非组件p：如果用户已设置对齐（通过ql-align类），保留用户设置
-            const hasAlignClass = el.className && el.className.includes('ql-align-');
-            if (hasAlignClass) {
+            // 非组件p：如果p已有text-align内联样式（来自用户对齐设置），保留
+            if (el.style.textAlign) {
                 // 保留用户的对齐设置，只应用其他样式
                 const styleObj = parseStyleString(styles.p);
                 for (const [property, value] of Object.entries(styleObj)) {
