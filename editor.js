@@ -210,23 +210,32 @@ function applyTemplateStyles(html, templateId) {
  * @param {Object} styles - 样式对象
  */
 function processElements(container, styles) {
-    // 处理h1
+    // 处理h1（跳过组件内部的h1）
     container.querySelectorAll('h1').forEach(el => {
+        const parentSection = el.closest('section[style]');
+        if (parentSection) return;
         applyInlineStyle(el, styles.h1);
     });
     
-    // 处理h2
+    // 处理h2（跳过组件内部的h2）
     container.querySelectorAll('h2').forEach(el => {
+        const parentSection = el.closest('section[style]');
+        if (parentSection) return;
         applyInlineStyle(el, styles.h2);
     });
     
-    // 处理h3
+    // 处理h3（跳过组件内部的h3）
     container.querySelectorAll('h3').forEach(el => {
+        const parentSection = el.closest('section[style]');
+        if (parentSection) return;
         applyInlineStyle(el, styles.h3);
     });
     
-    // 处理p标签（但排除已处理容器的子元素）
+    // 处理p标签（跳过组件内部的p和blockquote内的p）
     container.querySelectorAll('p').forEach(el => {
+        // 如果在带样式的section内（组件内容），跳过
+        const parentSection = el.closest('section[style]');
+        if (parentSection) return;
         if (!el.closest('blockquote')) {
             applyInlineStyle(el, styles.p);
         }
@@ -971,12 +980,69 @@ function showComponentPreview(componentId) {
         document.body.appendChild(modal);
     }
     
-    // 填充内容
+    // 填充标题
     modal.querySelector('.component-preview-header h4').textContent = component.name;
-    modal.querySelector('.component-preview-body').innerHTML = component.getHtml(currentColor);
+    
+    // 获取组件字段定义
+    const fields = component.getFields ? component.getFields() : [];
+    
+    // 渲染输入区域
+    const inputContainer = modal.querySelector('.input-fields-container');
+    if (fields.length === 0) {
+        inputContainer.innerHTML = '<div class="no-input-hint">此组件无需输入内容</div>';
+    } else {
+        inputContainer.innerHTML = fields.map(field => {
+            if (field.type === 'textarea') {
+                return `
+                    <div class="input-field-group">
+                        <label for="field-${field.key}">${field.label}</label>
+                        <textarea id="field-${field.key}" data-key="${field.key}" placeholder="${field.default}">${field.default}</textarea>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="input-field-group">
+                        <label for="field-${field.key}">${field.label}</label>
+                        <input type="text" id="field-${field.key}" data-key="${field.key}" value="${field.default}" placeholder="${field.default}">
+                    </div>
+                `;
+            }
+        }).join('');
+        
+        // 绑定实时更新事件
+        inputContainer.querySelectorAll('input, textarea').forEach(input => {
+            input.addEventListener('input', updateModalPreview);
+        });
+    }
+    
+    // 初始渲染预览
+    updateModalPreview();
     
     // 显示弹窗
     modal.classList.add('show');
+}
+
+/**
+ * 更新弹窗中的预览
+ */
+function updateModalPreview() {
+    const modal = document.querySelector('.component-preview-modal');
+    if (!modal) return;
+    
+    const previewArea = modal.querySelector('.preview-render');
+    if (!previewArea) return;
+    
+    // 收集用户输入的值
+    const fieldValues = {};
+    modal.querySelectorAll('.input-fields-container input, .input-fields-container textarea').forEach(input => {
+        const key = input.dataset.key;
+        const value = input.value;
+        fieldValues[key] = value;
+    });
+    
+    // 使用当前颜色和用户输入生成预览HTML
+    const previewHtml = getComponentPreview(currentPreviewComponent, currentColor, fieldValues);
+    previewArea.innerHTML = previewHtml;
 }
 
 /**
@@ -991,7 +1057,15 @@ function createPreviewModal() {
                 <h4>组件预览</h4>
                 <button class="component-preview-close">×</button>
             </div>
-            <div class="component-preview-body"></div>
+            <div class="component-preview-body">
+                <div class="component-input-area">
+                    <div class="input-fields-container"></div>
+                </div>
+                <div class="component-preview-area">
+                    <div class="preview-label">预览效果</div>
+                    <div class="preview-render"></div>
+                </div>
+            </div>
             <div class="component-preview-actions">
                 <button class="btn-preview">取消</button>
                 <button class="btn-insert">插入到编辑器</button>
@@ -1039,14 +1113,27 @@ function insertComponent() {
     if (!currentPreviewComponent) return;
     
     try {
-        const html = currentPreviewComponent.getHtml(currentColor);
+        // 收集用户输入的值
+        const modal = document.querySelector('.component-preview-modal');
+        const fieldValues = {};
         
-        // 获取当前光标位置
-        const cursorIndex = quill.getSelection(true);
-        const insertIndex = cursorIndex ? cursorIndex.index : quill.getLength();
+        if (modal) {
+            modal.querySelectorAll('.input-fields-container input, .input-fields-container textarea').forEach(input => {
+                const key = input.dataset.key;
+                const value = input.value;
+                fieldValues[key] = value;
+            });
+        }
         
-        // 在光标位置插入HTML（不替换现有内容）
-        quill.clipboard.dangerouslyPasteHTML(insertIndex, html);
+        // 使用用户输入生成HTML
+        const html = currentPreviewComponent.getHtml(currentColor, fieldValues);
+        
+        // 确保编辑器有焦点
+        quill.focus();
+        
+        // 使用 document.execCommand 在光标位置插入HTML
+        // 这个方法会绕过Quill的HTML过滤，保留section标签和内联样式
+        document.execCommand('insertHTML', false, html);
         
         // 同步预览
         syncToPreview();
