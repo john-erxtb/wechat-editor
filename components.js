@@ -229,6 +229,137 @@ const COMPONENTS = {
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; flex-shrink: 0;">${fields.title || '标题文字'}</p>
 <section style="flex: 1; height: 2px; background: linear-gradient(to right, ${color}, transparent); margin-left: 16px;"></section>
 </section>`
+            },
+            // ========== 不规则底色标题组件 ==========
+            {
+                id: 'title-highlighter',
+                name: '荧光笔标题',
+                icon: '🖍',
+                description: '半透明荧光笔效果，像用荧光笔划过',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.5; background-color: ${color}40; padding: 6px 14px; border-radius: 4px; display: inline;">${fields.title || '标题文字'}</p>
+</section>`
+            },
+            {
+                id: 'title-brush-round',
+                name: '不规则圆角色块',
+                icon: '🔲',
+                description: '四个角半径差异大的有机不规则色块',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background-color: ${color}; padding: 12px 18px; border-radius: 4px 28px 6px 24px; display: inline-block;">${fields.title || '标题文字'}</p>
+</section>`
+            },
+            {
+                id: 'title-offset-bg',
+                name: '偏移底色标题',
+                icon: '🎨',
+                description: '色块偏移的文字叠放效果，手绘感',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0;">
+<section style="background-color: ${color}; padding: 10px 16px; border-radius: 4px; display: inline-block; margin-left: 6px; margin-top: 4px;"></section>
+<section style="margin-top: -44px; margin-left: 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
+</section>
+</section>`
+            },
+            {
+                id: 'title-brush-dot',
+                name: '色块+圆点标题',
+                icon: '⭕',
+                description: '不规则色块配右上角装饰圆点',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; display: inline-block;">
+<section style="background-color: ${color}; padding: 12px 24px 12px 14px; border-radius: 4px 6px 6px 4px; display: inline-block;"></section>
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; margin-top: -46px; display: block;">${fields.title || '标题文字'}</p>
+<section style="width: 12px; height: 12px; background-color: #FFD700; border-radius: 50%; margin-left: auto; margin-top: -52px; margin-right: 8px;"></section>
+</section>`
+            },
+            {
+                id: 'title-brush-gradient',
+                name: '渐变笔刷标题',
+                icon: '🌈',
+                description: '渐变底色模拟笔刷浓淡变化',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background: linear-gradient(135deg, ${color} 0%, ${color}60 100%); padding: 10px 16px; border-radius: 4px 8px 12px 6px;">${fields.title || '标题文字'}</p>
+</section>`
+            },
+            {
+                id: 'title-sticker',
+                name: '倾斜贴纸标题',
+                icon: '📌',
+                description: '微微倾斜的便利贴风格',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; transform: rotate(-1deg); display: inline-block;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background-color: ${color}; padding: 12px 20px; border-radius: 2px;">${fields.title || '标题文字'}</p>
+</section>`
+            },
+            {
+                id: 'title-multi-bar',
+                name: '多层色条标题',
+                icon: '▤',
+                description: '多层色条叠加，手绘层次感',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0;">
+<section style="background-color: ${color}60; padding: 8px 14px; border-radius: 4px; margin-left: 2px; margin-top: 2px; display: inline-block;"></section>
+<section style="background-color: ${color}; padding: 8px 14px; border-radius: 4px; display: inline-block; margin-left: -52px; margin-top: 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4;">${fields.title || '标题文字'}</p>
+</section>
+</section>`
+            },
+            {
+                id: 'title-slant-tag',
+                name: '斜角标签标题',
+                icon: '🏷',
+                description: '一侧斜切角的手撕标签风格',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; display: inline-flex;">
+<section style="background-color: ${color}; padding: 10px 16px; border-radius: 0 12px 12px 0; border-left: 16px solid transparent; box-shadow: -8px 0 0 0 ${color};">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4;">${fields.title || '标题文字'}</p>
+</section>
+</section>`
+            },
+            {
+                id: 'title-wide-band',
+                name: '宽色带标题',
+                icon: '➖',
+                description: '宽色带横贯，文字居中',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; text-align: center;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background-color: ${color}30; padding: 14px 40px; border-radius: 6px 20px 20px 6px; display: inline-block;">${fields.title || '标题文字'}</p>
+</section>`
+            },
+            {
+                id: 'title-sketch-frame',
+                name: '手绘框标题',
+                icon: '✒',
+                description: '模拟手绘边框线的标题框',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; padding: 12px 16px; border: 2px solid ${color}; border-radius: 8px; border-top-width: 3px; border-left-style: dashed; opacity: 0.85;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
+</section>`
             }
         ]
     },
