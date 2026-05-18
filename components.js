@@ -157,11 +157,12 @@ const COMPONENTS = {
                 icon: '①',
                 description: '带数字圆圈的标题',
                 getFields: () => [
+                    { key: 'number', label: '编号数字', type: 'text', default: '1' },
                     { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
                 ],
                 getHtml: (color, fields) => `<section style="margin: 20px 0; display: flex; align-items: center; gap: 12px;">
 <section style="width: 36px; height: 36px; background-color: ${color}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-<p style="margin: 0; color: #ffffff; font-weight: 700; font-size: 16px;">1</p>
+<p style="margin: 0; color: #ffffff; font-weight: 700; font-size: 16px;">${fields.number || '1'}</p>
 </section>
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
 </section>`
@@ -213,7 +214,7 @@ const COMPONENTS = {
                     { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
                 ],
                 getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background: linear-gradient(90deg, ${color}, ${color}aa); padding: 10px 20px; border-radius: 4px;">${fields.title || '标题文字'}</p>
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background: linear-gradient(90deg, ${color}, transparent); padding: 10px 20px; border-radius: 4px;">${fields.title || '标题文字'}</p>
 </section>`
             },
             {
@@ -286,11 +287,13 @@ const COMPONENTS = {
                 name: '带文字分割线',
                 icon: '文字',
                 description: '—— 文字 —— 格式',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0; text-align: center;">
+                getFields: () => [
+                    { key: 'text', label: '分割线文字', type: 'text', default: '分割文字' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 24px 0; text-align: center;">
 <section style="display: flex; align-items: center; justify-content: center; gap: 12px;">
 <section style="flex: 1; height: 1px; background-color: ${color}; opacity: 0.3;"></section>
-<p style="margin: 0; color: ${color}; font-size: 14px; opacity: 0.7;">分割文字</p>
+<p style="margin: 0; color: ${color}; font-size: 14px; opacity: 0.7;">${fields.text || '分割文字'}</p>
 <section style="flex: 1; height: 1px; background-color: ${color}; opacity: 0.3;"></section>
 </section>
 </section>`
@@ -312,8 +315,8 @@ const COMPONENTS = {
                 icon: '•',
                 description: '点状分割线',
                 getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0; text-align: center;">
-<p style="margin: 0; color: ${color}; opacity: 0.5; letter-spacing: 8px; font-size: 12px;">• • • • •</p>
+                getHtml: (color) => `<section style="margin: 24px 0; text-align: center; line-height: 1;">
+<p style="margin: 0; color: ${color}; opacity: 0.4; letter-spacing: 12px; font-size: 10px; display: inline-block;">• • • • • • • • •</p>
 </section>`
             }
         ]
@@ -369,12 +372,12 @@ const COMPONENTS = {
                 getFields: () => [
                     { key: 'content', label: '提示内容', type: 'textarea', default: '在这里输入提示内容...' }
                 ],
-                getHtml: () => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #fff8e1; border-radius: 8px; border-left: 4px solid #ffc107;">
+                getHtml: (color, fields) => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #fff8e1; border-radius: 8px; border-left: 4px solid #ffc107;">
 <section style="display: flex; align-items: flex-start; gap: 12px;">
 <section style="font-size: 20px; flex-shrink: 0;">⚠️</section>
 <section>
 <p style="margin: 0 0 8px 0; font-weight: 600; color: #f57c00; font-size: 16px;">注意</p>
-<p style="margin: 0; line-height: 1.7; color: #333333;">在这里输入提示内容...</p>
+<p style="margin: 0; line-height: 1.7; color: #333333;">${fields.content || '在这里输入提示内容...'}</p>
 </section>
 </section>
 </section>`
@@ -387,12 +390,12 @@ const COMPONENTS = {
                 getFields: () => [
                     { key: 'content', label: '提示内容', type: 'textarea', default: '在这里输入提示内容...' }
                 ],
-                getHtml: () => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+                getHtml: (color, fields) => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
 <section style="display: flex; align-items: flex-start; gap: 12px;">
 <section style="font-size: 20px; flex-shrink: 0;">💡</section>
 <section>
 <p style="margin: 0 0 8px 0; font-weight: 600; color: #1976d2; font-size: 16px;">提示</p>
-<p style="margin: 0; line-height: 1.7; color: #333333;">在这里输入提示内容...</p>
+<p style="margin: 0; line-height: 1.7; color: #333333;">${fields.content || '在这里输入提示内容...'}</p>
 </section>
 </section>
 </section>`
@@ -405,12 +408,12 @@ const COMPONENTS = {
                 getFields: () => [
                     { key: 'content', label: '警告内容', type: 'textarea', default: '在这里输入警告内容...' }
                 ],
-                getHtml: () => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+                getHtml: (color, fields) => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
 <section style="display: flex; align-items: flex-start; gap: 12px;">
 <section style="font-size: 20px; flex-shrink: 0;">🚫</section>
 <section>
 <p style="margin: 0 0 8px 0; font-weight: 600; color: #d32f2f; font-size: 16px;">警告</p>
-<p style="margin: 0; line-height: 1.7; color: #333333;">在这里输入警告内容...</p>
+<p style="margin: 0; line-height: 1.7; color: #333333;">${fields.content || '在这里输入警告内容...'}</p>
 </section>
 </section>
 </section>`
@@ -423,12 +426,12 @@ const COMPONENTS = {
                 getFields: () => [
                     { key: 'content', label: '成功内容', type: 'textarea', default: '在这里输入成功内容...' }
                 ],
-                getHtml: () => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
+                getHtml: (color, fields) => `<section style="margin: 16px 0; padding: 16px 20px; background-color: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
 <section style="display: flex; align-items: flex-start; gap: 12px;">
 <section style="font-size: 20px; flex-shrink: 0;">✅</section>
 <section>
 <p style="margin: 0 0 8px 0; font-weight: 600; color: #388e3c; font-size: 16px;">成功</p>
-<p style="margin: 0; line-height: 1.7; color: #333333;">在这里输入成功内容...</p>
+<p style="margin: 0; line-height: 1.7; color: #333333;">${fields.content || '在这里输入成功内容...'}</p>
 </section>
 </section>
 </section>`
@@ -449,100 +452,6 @@ const COMPONENTS = {
         ]
     },
 
-    // ========== E. 列表装饰 ==========
-    list: {
-        name: '列表装饰',
-        icon: '📝',
-        items: [
-            {
-                id: 'list-colored-dot',
-                name: '彩色圆点列表',
-                icon: '●',
-                description: '彩色圆点样式的列表',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 16px 0;">
-<section style="margin: 8px 0; padding-left: 20px; position: relative;">
-<p style="margin: 0; line-height: 1.8;"><span style="display: inline-block; width: 8px; height: 8px; background-color: ${color}; border-radius: 50%; margin-right: 8px; vertical-align: middle; position: absolute; left: 0; top: 10px;"></span>列表项内容一</p>
-</section>
-<section style="margin: 8px 0; padding-left: 20px; position: relative;">
-<p style="margin: 0; line-height: 1.8;"><span style="display: inline-block; width: 8px; height: 8px; background-color: ${color}; border-radius: 50%; margin-right: 8px; vertical-align: middle; position: absolute; left: 0; top: 10px;"></span>列表项内容二</p>
-</section>
-<section style="margin: 8px 0; padding-left: 20px; position: relative;">
-<p style="margin: 0; line-height: 1.8;"><span style="display: inline-block; width: 8px; height: 8px; background-color: ${color}; border-radius: 50%; margin-right: 8px; vertical-align: middle; position: absolute; left: 0; top: 10px;"></span>列表项内容三</p>
-</section>
-</section>`
-            },
-            {
-                id: 'list-number-tag',
-                name: '编号标签列表',
-                icon: '①②',
-                description: '带彩色编号的列表',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 16px 0;">
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 10px;">
-<section style="min-width: 24px; height: 24px; background-color: ${color}; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-<p style="margin: 0; color: #ffffff; font-size: 14px; font-weight: 600;">1</p>
-</section>
-<p style="margin: 0; line-height: 24px; flex: 1;">列表项内容一</p>
-</section>
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 10px;">
-<section style="min-width: 24px; height: 24px; background-color: ${color}; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-<p style="margin: 0; color: #ffffff; font-size: 14px; font-weight: 600;">2</p>
-</section>
-<p style="margin: 0; line-height: 24px; flex: 1;">列表项内容二</p>
-</section>
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 10px;">
-<section style="min-width: 24px; height: 24px; background-color: ${color}; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-<p style="margin: 0; color: #ffffff; font-size: 14px; font-weight: 600;">3</p>
-</section>
-<p style="margin: 0; line-height: 24px; flex: 1;">列表项内容三</p>
-</section>
-</section>`
-            },
-            {
-                id: 'list-check',
-                name: '勾选列表',
-                icon: '☑',
-                description: '带勾选框的列表',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 16px 0;">
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 10px;">
-<section style="min-width: 20px; height: 20px; border: 2px solid ${color}; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-<p style="margin: 0; color: ${color}; font-size: 12px; font-weight: bold;">✓</p>
-</section>
-<p style="margin: 0; line-height: 1.8; flex: 1;">已完成的任务项</p>
-</section>
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 10px;">
-<section style="min-width: 20px; height: 20px; border: 2px solid #cccccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-</section>
-<p style="margin: 0; line-height: 1.8; flex: 1; color: #999999;">待完成的任务项</p>
-</section>
-</section>`
-            },
-            {
-                id: 'list-arrow',
-                name: '箭头列表',
-                icon: '▶',
-                description: '箭头样式的列表',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 16px 0;">
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 8px;">
-<p style="margin: 0; color: ${color}; font-size: 12px; line-height: 1.8;">▶</p>
-<p style="margin: 0; line-height: 1.8; flex: 1;">列表项内容一</p>
-</section>
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 8px;">
-<p style="margin: 0; color: ${color}; font-size: 12px; line-height: 1.8;">▶</p>
-<p style="margin: 0; line-height: 1.8; flex: 1;">列表项内容二</p>
-</section>
-<section style="margin: 8px 0; display: flex; align-items: flex-start; gap: 8px;">
-<p style="margin: 0; color: ${color}; font-size: 12px; line-height: 1.8;">▶</p>
-<p style="margin: 0; line-height: 1.8; flex: 1;">列表项内容三</p>
-</section>
-</section>`
-            }
-        ]
-    },
-
     // ========== F. 其他元素 ==========
     other: {
         name: '其他元素',
@@ -553,9 +462,11 @@ const COMPONENTS = {
                 name: '居中文字',
                 icon: '居中',
                 description: '带装饰的居中文字',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 20px 0; text-align: center;">
-<p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.8; letter-spacing: 2px;">居中显示的文字内容</p>
+                getFields: () => [
+                    { key: 'content', label: '文字内容', type: 'textarea', default: '居中显示的文字内容' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; text-align: center;">
+<p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.8; letter-spacing: 2px;">${fields.content || '居中显示的文字内容'}</p>
 </section>`
             },
             {
@@ -563,11 +474,14 @@ const COMPONENTS = {
                 name: '作者署名区',
                 icon: '✍',
                 description: '文章署名区域',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0; text-align: right; padding: 16px 0; border-top: 1px solid #eeeeee;">
+                getFields: () => [
+                    { key: 'author', label: '作者名', type: 'text', default: '作者名' },
+                    { key: 'date', label: '日期', type: 'text', default: 'XXXX年XX月XX日' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 24px 0; text-align: right; padding: 16px 0; border-top: 1px solid #eeeeee;">
 <section style="display: inline-block;">
-<p style="margin: 0 0 4px 0; font-size: 14px; color: #999999;">文 / 作者名</p>
-<p style="margin: 0; font-size: 12px; color: #bbbbbb;">XXXX年XX月XX日</p>
+<p style="margin: 0 0 4px 0; font-size: 14px; color: #999999;">文 / ${fields.author || '作者名'}</p>
+<p style="margin: 0; font-size: 12px; color: #bbbbbb;">${fields.date || 'XXXX年XX月XX日'}</p>
 </section>
 </section>`
             },
@@ -576,12 +490,14 @@ const COMPONENTS = {
                 name: '二维码占位区',
                 icon: '📱',
                 description: '二维码展示区域',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px auto; text-align: center; max-width: 200px;">
+                getFields: () => [
+                    { key: 'hint', label: '提示文字', type: 'text', default: '扫码关注' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 24px auto; text-align: center; max-width: 200px;">
 <section style="width: 160px; height: 160px; background-color: #f5f5f5; border: 2px dashed ${color}; border-radius: 8px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
 <p style="margin: 0; color: #cccccc; font-size: 48px;">⬜</p>
 </section>
-<p style="margin: 0; font-size: 14px; color: #666666;">扫码关注</p>
+<p style="margin: 0; font-size: 14px; color: #666666;">${fields.hint || '扫码关注'}</p>
 </section>`
             },
             {
@@ -589,9 +505,11 @@ const COMPONENTS = {
                 name: '表情包/贴纸区',
                 icon: '😊',
                 description: '装饰性表情展示',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 20px 0; text-align: center;">
-<p style="margin: 0; font-size: 48px; line-height: 1;">🎉 ✨ 👍 💪</p>
+                getFields: () => [
+                    { key: 'emoji', label: '表情符号（可输入多个）', type: 'text', default: '🎉 ✨ 👍 💪' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 20px 0; text-align: center;">
+<p style="margin: 0; font-size: 48px; line-height: 1;">${fields.emoji || '🎉 ✨ 👍 💪'}</p>
 </section>`
             },
             {
@@ -599,10 +517,14 @@ const COMPONENTS = {
                 name: '高亮文字块',
                 icon: '🖍',
                 description: '荧光笔效果文字',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 16px 0;">
+                getFields: () => [
+                    { key: 'normalText', label: '普通文字', type: 'text', default: '这是一段普通文字。' },
+                    { key: 'highlightText', label: '高亮文字', type: 'text', default: '这里是高亮显示的文字' },
+                    { key: 'afterText', label: '高亮后文字', type: 'text', default: '，继续普通文字。' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 16px 0;">
 <p style="margin: 0; font-size: 16px; line-height: 2; color: #333333;">
-这是一段普通文字。<span style="background: linear-gradient(transparent 60%, ${color}60 60%); padding: 0 4px;">这里是高亮显示的文字</span>，继续普通文字。
+${fields.normalText || '这是一段普通文字。'}<span style="background: linear-gradient(transparent 60%, ${color}60 60%); padding: 0 4px;">${fields.highlightText || '这里是高亮显示的文字'}</span>${fields.afterText || '，继续普通文字。'}
 </p>
 </section>`
             },
@@ -611,13 +533,16 @@ const COMPONENTS = {
                 name: '呼出气泡',
                 icon: '💭',
                 description: '对话气泡样式',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 16px 0; display: flex; flex-direction: column; gap: 12px;">
+                getFields: () => [
+                    { key: 'leftMsg', label: '左侧消息', type: 'text', default: '这是左边发出的消息气泡' },
+                    { key: 'rightMsg', label: '右侧消息', type: 'text', default: '这是右边发出的回复气泡' }
+                ],
+                getHtml: (color, fields) => `<section style="margin: 16px 0; display: flex; flex-direction: column; gap: 12px;">
 <section style="align-self: flex-start; max-width: 80%; background-color: #f0f2f5; border-radius: 12px; padding: 12px 16px; position: relative;">
-<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #333333;">这是左边发出的消息气泡</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #333333;">${fields.leftMsg || '这是左边发出的消息气泡'}</p>
 </section>
 <section style="align-self: flex-end; max-width: 80%; background-color: ${color}; border-radius: 12px; padding: 12px 16px;">
-<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #ffffff;">这是右边发出的回复气泡</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #ffffff;">${fields.rightMsg || '这是右边发出的回复气泡'}</p>
 </section>
 </section>`
             }

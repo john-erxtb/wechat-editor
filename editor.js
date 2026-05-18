@@ -111,6 +111,13 @@ function initQuillEditor() {
     quill.on('text-change', function() {
         syncToPreview();
     });
+    
+    // 编辑器失焦时保存光标位置
+    quill.on('selection-change', function(range) {
+        if (range) {
+            savedCursorPosition = range.index;
+        }
+    });
 
     // === 组件交互：点击选中、双击编辑、Delete删除 ===
     // 点击组件选中
@@ -307,21 +314,33 @@ function processElements(container, styles) {
         applyInlineStyle(el, styles.h3);
     });
     
-    // 处理p标签（组件内部也应用text-align）
+    // 处理p标签（组件内部也应用text-align，但保留已有设置）
     container.querySelectorAll('p').forEach(el => {
         const parentSection = el.closest('section[style]');
         if (parentSection) {
-            // 组件内部的p：只应用text-align，不覆盖其他样式
+            // 组件内部p：保留已有text-align，否则从模板继承
             if (styles.p) {
                 const styleObj = parseStyleString(styles.p);
-                if (styleObj.textAlign) {
+                if (styleObj.textAlign && !el.style.textAlign) {
                     el.style.textAlign = styleObj.textAlign;
                 }
             }
             return;
         }
         if (!el.closest('blockquote')) {
-            applyInlineStyle(el, styles.p);
+            // 非组件p：如果用户已设置对齐（通过ql-align类），保留用户设置
+            const hasAlignClass = el.className && el.className.includes('ql-align-');
+            if (hasAlignClass) {
+                // 保留用户的对齐设置，只应用其他样式
+                const styleObj = parseStyleString(styles.p);
+                for (const [property, value] of Object.entries(styleObj)) {
+                    if (property !== 'textAlign') {
+                        el.style[property] = value;
+                    }
+                }
+            } else {
+                applyInlineStyle(el, styles.p);
+            }
         }
     });
     
@@ -995,6 +1014,13 @@ function initColorPicker() {
             picker.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
             this.classList.add('active');
             currentColor = this.dataset.color;
+            
+            // 如果有选中的组件，更新其颜色
+            const selectedComp = document.querySelector('.wechat-component.selected');
+            if (selectedComp && selectedComp.dataset.componentId) {
+                updateComponentColor(selectedComp, currentColor);
+            }
+            
             renderComponentList();
         });
     });
@@ -1245,6 +1271,27 @@ function processFieldValues(fields, fieldValues) {
         }
     }
     return processed;
+}
+
+/**
+ * 更新选中组件的颜色
+ */
+function updateComponentColor(componentEl, newColor) {
+    const componentId = componentEl.dataset.componentId;
+    const fieldValues = componentEl.dataset.fieldValues ? JSON.parse(componentEl.dataset.fieldValues) : {};
+    
+    const component = findComponentById(componentId);
+    if (!component) return;
+    
+    const fields = component.getFields ? component.getFields() : [];
+    const processedValues = processFieldValues(fields, fieldValues);
+    const html = component.getHtml(newColor, processedValues);
+    
+    componentEl.innerHTML = html;
+    componentEl.dataset.componentColor = newColor;
+    
+    syncToPreview();
+    showToast('组件颜色已更新', 'success');
 }
 
 /**
