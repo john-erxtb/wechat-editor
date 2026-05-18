@@ -1071,4 +1071,12 @@ html, body {
 }
 
 .ql-editor .wechat-component:hover {
-   
+    outline: 2px dashed #1a73e8;
+    outline-offset: 2px;
+}
+
+.ql-editor .wechat-component.selected {
+    outline: 2px solid #1a73e8;
+    outline-offset: 2px;
+    background-color: rgba(26, 115, 232, 0.03);
+}

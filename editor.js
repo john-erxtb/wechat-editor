@@ -1201,4 +1201,294 @@ function createPreviewModal() {
     
     // 插入按钮（区分新建/编辑模式）
     modal.querySelector('.btn-insert').addEventListener('click', () => {
-        if (editingComponentEleme
+        if (editingComponentElement) {
+            updateComponent();
+        } else {
+            insertComponent();
+        }
+        modal.classList.remove('show');
+    });
+    
+    // 点击背景关闭（使用mousedown/mouseup组合避免输入框选择文字误触）
+    let modalMouseDownTarget = null;
+    modal.addEventListener('mousedown', (e) => {
+        modalMouseDownTarget = e.target;
+    });
+    modal.addEventListener('mouseup', (e) => {
+        if (e.target === modal && modalMouseDownTarget === modal) {
+            modal.classList.remove('show');
+        }
+        modalMouseDownTarget = null;
+    });
+    
+    return modal;
+}
+
+/**
+ * 初始化预览弹窗（备用）
+ */
+function initPreviewModal() {
+    // 弹窗会在首次需要时动态创建
+}
+
+/**
+ * 处理字段值：textarea中的换行转为<br>
+ */
+function processFieldValues(fields, fieldValues) {
+    const processed = {};
+    for (const key in fieldValues) {
+        const field = fields.find(f => f.key === key);
+        if (field && field.type === 'textarea' && fieldValues[key]) {
+            processed[key] = fieldValues[key].replace(/\n/g, '<br>');
+        } else {
+            processed[key] = fieldValues[key];
+        }
+    }
+    return processed;
+}
+
+/**
+ * 在所有分类中查找组件定义
+ */
+function findComponentById(componentId) {
+    const categories = getComponentCategories();
+    for (const cat of categories) {
+        const components = getComponentsByCategory(cat.id);
+        const found = components.find(c => c.id === componentId);
+        if (found) return found;
+    }
+    return null;
+}
+
+/**
+ * 插入组件到编辑器
+ */
+function insertComponent() {
+    if (!currentPreviewComponent) return;
+    
+    try {
+        // 收集用户输入的值
+        const modal = document.querySelector('.component-preview-modal');
+        const fieldValues = {};
+        
+        if (modal) {
+            modal.querySelectorAll('.input-fields-container input, .input-fields-container textarea').forEach(input => {
+                const key = input.dataset.key;
+                const value = input.value;
+                fieldValues[key] = value;
+            });
+        }
+        
+        // 处理textarea换行
+        const fields = currentPreviewComponent.getFields ? currentPreviewComponent.getFields() : [];
+        const processedValues = processFieldValues(fields, fieldValues);
+        
+        // 使用用户输入生成HTML
+        const html = currentPreviewComponent.getHtml(currentColor, processedValues);
+        
+        // 使用保存的光标位置（而非默认末尾）
+        let insertIndex = savedCursorPosition !== null ? savedCursorPosition : quill.getLength() - 1;
+        
+        // 使用Quill API插入自定义Blot（携带元数据）
+        quill.insertEmbed(insertIndex, 'wechat-component', {
+            html: html,
+            componentId: currentPreviewComponent.id,
+            fieldValues: fieldValues,
+            color: currentColor
+        }, 'user');
+        
+        // 将光标移到组件后面
+        quill.setSelection(insertIndex + 1, 0);
+        
+        // 同步预览
+        syncToPreview();
+        
+        showToast(`「${currentPreviewComponent.name}」已插入`, 'success');
+    } catch (e) {
+        console.error('插入组件失败:', e);
+        showToast('插入失败，请重试', 'error');
+    }
+    
+    savedCursorPosition = null;
+}
+
+/**
+ * 编辑已有组件（双击触发）
+ */
+function editComponent(componentEl) {
+    const componentId = componentEl.dataset.componentId;
+    const fieldValues = componentEl.dataset.fieldValues ? JSON.parse(componentEl.dataset.fieldValues) : {};
+    const color = componentEl.dataset.componentColor || '#1a73e8';
+    
+    if (!componentId) {
+        showToast('无法识别此组件类型', 'error');
+        return;
+    }
+    
+    // 在所有分类中查找组件
+    const component = findComponentById(componentId);
+    if (!component) {
+        showToast('未找到组件定义', 'error');
+        return;
+    }
+    
+    // 标记为编辑模式
+    editingComponentElement = componentEl;
+    currentPreviewComponent = component;
+    
+    // 打开编辑弹窗（传入初始值）
+    showComponentEditModal(component, fieldValues, color);
+}
+
+/**
+ * 显示编辑弹窗（复用预览弹窗结构，预填值）
+ */
+function showComponentEditModal(component, fieldValues, color) {
+    currentColor = color;
+    
+    // 创建弹窗
+    let modal = document.querySelector('.component-preview-modal');
+    if (!modal) {
+        modal = createPreviewModal();
+        document.body.appendChild(modal);
+    }
+    
+    // 填充标题
+    const headerTitle = modal.querySelector('.component-preview-header h4');
+    headerTitle.textContent = '编辑组件 - ' + component.name;
+    
+    // 获取组件字段定义
+    const fields = component.getFields ? component.getFields() : [];
+    
+    // 渲染输入区域（预填值）
+    const inputContainer = modal.querySelector('.input-fields-container');
+    if (fields.length === 0) {
+        inputContainer.innerHTML = '<div class="no-input-hint">此组件无需输入内容</div>';
+    } else {
+        inputContainer.innerHTML = fields.map(field => {
+            const val = fieldValues[field.key] !== undefined ? fieldValues[field.key] : field.default;
+            if (field.type === 'textarea') {
+                return `
+                    <div class="input-field-group">
+                        <label for="field-${field.key}">${field.label}</label>
+                        <textarea id="field-${field.key}" data-key="${field.key}" placeholder="${field.default}">${val}</textarea>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="input-field-group">
+                        <label for="field-${field.key}">${field.label}</label>
+                        <input type="text" id="field-${field.key}" data-key="${field.key}" value="${val}" placeholder="${field.default}">
+                    </div>
+                `;
+            }
+        }).join('');
+        
+        inputContainer.querySelectorAll('input, textarea').forEach(input => {
+            input.addEventListener('input', updateModalPreview);
+        });
+    }
+    
+    // 初始渲染预览
+    updateModalPreview();
+    
+    // 显示弹窗
+    modal.classList.add('show');
+}
+
+/**
+ * 更新已有组件（编辑模式保存时触发）
+ */
+function updateComponent() {
+    if (!currentPreviewComponent || !editingComponentElement) return;
+    
+    try {
+        const modal = document.querySelector('.component-preview-modal');
+        const fieldValues = {};
+        
+        if (modal) {
+            modal.querySelectorAll('.input-fields-container input, .input-fields-container textarea').forEach(input => {
+                fieldValues[input.dataset.key] = input.value;
+            });
+        }
+        
+        // 处理textarea换行
+        const fields = currentPreviewComponent.getFields ? currentPreviewComponent.getFields() : [];
+        const processedValues = processFieldValues(fields, fieldValues);
+        
+        // 生成新HTML
+        const html = currentPreviewComponent.getHtml(currentColor, processedValues);
+        
+        // 就地更新组件DOM
+        editingComponentElement.innerHTML = html;
+        editingComponentElement.dataset.componentId = currentPreviewComponent.id;
+        editingComponentElement.dataset.fieldValues = JSON.stringify(fieldValues);
+        editingComponentElement.dataset.componentColor = currentColor;
+        
+        // 同步预览
+        syncToPreview();
+        
+        showToast('组件已更新', 'success');
+    } catch (e) {
+        console.error('更新组件失败:', e);
+        showToast('更新失败，请重试', 'error');
+    }
+    
+    editingComponentElement = null;
+}
+
+// ==================== 工具函数 ====================
+
+/**
+ * 显示Toast提示
+ * @param {string} message - 提示消息
+ * @param {string} type - 提示类型 (success/error/info)
+ */
+function showToast(message, type = 'info') {
+    // 移除已有的toast
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // 创建新的toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // 显示动画
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // 3秒后自动移除
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * 更新状态栏时间
+ */
+function updateTime() {
+    const timeEl = document.querySelector('.status-time');
+    if (timeEl) {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        timeEl.textContent = `${hours}:${minutes}`;
+    }
+}
+
+// ==================== 导出函数供测试使用 ====================
+if (typeof window !== 'undefined') {
+    window.WechatEditor = {
+        getQuill: () => quill,
+        getCurrentTemplate: () => currentTemplate,
+        convertToWechatHTML,
+        copyToWechat,
+        switchTemplate
+    };
+}
