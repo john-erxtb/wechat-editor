@@ -647,6 +647,15 @@ function initActionButtons() {
     
     // 清空按钮
     document.getElementById('clear-btn').addEventListener('click', clearEditor);
+    
+    // 保存草稿按钮
+    document.getElementById('save-draft-btn').addEventListener('click', showSaveDraftModal);
+    
+    // 草稿箱按钮
+    document.getElementById('draft-box-btn').addEventListener('click', showDraftBoxModal);
+    
+    // 复制HTML按钮
+    document.getElementById('copy-html-btn').addEventListener('click', copyHTMLToClipboard);
 }
 
 /**
@@ -779,33 +788,41 @@ function clearEditor() {
     showToast('内容已清空');
 }
 
-// ==================== 本地自动保存 ====================
+// ==================== 本地自动保存（增强版） ====================
 
-const STORAGE_KEY = 'wechat_editor_draft';
-const STORAGE_TEMPLATE_KEY = 'wechat_editor_template';
+const STORAGE_KEY = 'wechat-editor-autosave';      // 自动保存key
+const DRAFTS_KEY = 'wechat-editor-drafts';        // 草稿箱key
+const STORAGE_TEMPLATE_KEY = 'wechat-editor-template';
 let autoSaveTimer = null;
 let isContentChanged = false;
+let lastSavedContent = '';  // 用于比较内容是否变化
 
 /**
  * 初始化自动保存
  */
 function initAutoSave() {
-    // 检查是否有草稿
-    checkDraft();
-    
     // 监听内容变化
     quill.on('text-change', function() {
-        isContentChanged = true;
-        updateSaveStatus('unsaved');
+        const currentContent = quill.root.innerHTML;
+        isContentChanged = (currentContent !== lastSavedContent);
         
-        // 防抖自动保存
+        if (isContentChanged) {
+            updateSaveStatus('unsaved');
+        }
+        
+        // 防抖自动保存（1秒无操作后保存）
         if (autoSaveTimer) {
             clearTimeout(autoSaveTimer);
         }
         autoSaveTimer = setTimeout(() => {
-            saveDraft();
-        }, 30000); // 30秒后自动保存
+            if (quill.getText().trim()) {
+                autoSaveContent();
+            }
+        }, 1000); // 1秒防抖
     });
+    
+    // 页面加载时恢复自动保存的内容
+    restoreAutoSave();
     
     // 监听模板变化
     const originalSwitchTemplate = window.switchTemplate;
@@ -817,49 +834,517 @@ function initAutoSave() {
     // 页面离开前保存
     window.addEventListener('beforeunload', function(e) {
         if (isContentChanged) {
-            saveDraft();
+            autoSaveContent();
         }
     });
-    
-    // 定期保存检查（每10秒检查一次是否需要保存）
-    setInterval(() => {
-        if (isContentChanged) {
-            saveDraft();
-        }
-    }, 10000);
 }
 
 /**
- * 保存草稿到本地存储
+ * 自动保存当前内容到localStorage
  */
-function saveDraft() {
+function autoSaveContent() {
     try {
         updateSaveStatus('saving');
         
         const content = quill.root.innerHTML;
-        const text = quill.getText();
+        const previewContent = document.getElementById('preview-content');
+        const previewHtml = previewContent ? previewContent.innerHTML : '';
         
         // 不保存空白内容
-        if (!text.trim()) {
+        if (!quill.getText().trim()) {
+            updateSaveStatus('saved');
             return;
         }
         
-        const draft = {
+        const saveData = {
             content: content,
+            previewHtml: previewHtml,
             template: currentTemplate,
-            savedAt: new Date().toISOString()
+            timestamp: Date.now()
         };
         
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+        lastSavedContent = content;
         isContentChanged = false;
         
-        setTimeout(() => {
-            updateSaveStatus('saved');
-        }, 500);
+        updateSaveStatus('saved');
+    } catch (e) {
+        console.error('自动保存失败:', e);
+        updateSaveStatus('error');
+        // 检查是否是存储空间不足
+        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+            showToast('存储空间不足，请清理草稿箱', 'error');
+        }
+    }
+}
+
+/**
+ * 从localStorage恢复自动保存的内容
+ */
+function restoreAutoSave() {
+    try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (!savedData) return;
+        
+        const data = JSON.parse(savedData);
+        if (!data.content || !data.template) return;
+        
+        // 恢复模板
+        if (TEMPLATES[data.template]) {
+            currentTemplate = data.template;
+            initTemplateSelector();
+        }
+        
+        // 恢复内容
+        quill.root.innerHTML = data.content;
+        lastSavedContent = data.content;
+        
+        // 更新预览
+        syncToPreview();
+        
+        updateSaveStatus('saved');
+    } catch (e) {
+        console.error('恢复自动保存失败:', e);
+    }
+}
+
+/**
+ * 保存当前内容到草稿箱
+ * @param {string} name - 草稿名称
+ */
+function saveToDraftBox(name) {
+    try {
+        const content = quill.root.innerHTML;
+        const previewContent = document.getElementById('preview-content');
+        const previewHtml = previewContent ? previewContent.innerHTML : '';
+        
+        // 不保存空白内容
+        if (!quill.getText().trim()) {
+            showToast('编辑器内容为空，无法保存', 'error');
+            return false;
+        }
+        
+        // 获取现有草稿列表
+        let drafts = [];
+        const existingDrafts = localStorage.getItem(DRAFTS_KEY);
+        if (existingDrafts) {
+            try {
+                drafts = JSON.parse(existingDrafts);
+            } catch (e) {
+                drafts = [];
+            }
+        }
+        
+        // 生成新草稿
+        const newDraft = {
+            id: generateUUID(),
+            name: name || formatDateTime(new Date()),
+            content: content,
+            previewHtml: previewHtml,
+            template: currentTemplate,
+            timestamp: Date.now()
+        };
+        
+        drafts.unshift(newDraft); // 添加到列表开头
+        
+        // 保存到localStorage
+        try {
+            localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+            showToast(`「${newDraft.name}」已保存到草稿箱`, 'success');
+            return true;
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                showToast('草稿箱存储空间不足，请清理部分草稿', 'error');
+            } else {
+                throw e;
+            }
+            return false;
+        }
     } catch (e) {
         console.error('保存草稿失败:', e);
-        updateSaveStatus('error');
+        showToast('保存草稿失败，请重试', 'error');
+        return false;
     }
+}
+
+/**
+ * 从草稿箱加载草稿
+ * @param {string} draftId - 草稿ID
+ */
+function loadDraft(draftId) {
+    try {
+        const drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
+        const draft = drafts.find(d => d.id === draftId);
+        
+        if (!draft) {
+            showToast('未找到该草稿', 'error');
+            return false;
+        }
+        
+        // 恢复模板
+        if (TEMPLATES[draft.template]) {
+            currentTemplate = draft.template;
+            initTemplateSelector();
+        }
+        
+        // 恢复内容
+        quill.root.innerHTML = draft.content;
+        lastSavedContent = draft.content;
+        
+        // 更新预览
+        syncToPreview();
+        
+        showToast(`「${draft.name}」已加载`, 'success');
+        return true;
+    } catch (e) {
+        console.error('加载草稿失败:', e);
+        showToast('加载草稿失败，请重试', 'error');
+        return false;
+    }
+}
+
+/**
+ * 从草稿箱删除草稿
+ * @param {string} draftId - 草稿ID
+ */
+function deleteDraft(draftId) {
+    try {
+        let drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
+        const draftIndex = drafts.findIndex(d => d.id === draftId);
+        
+        if (draftIndex === -1) {
+            showToast('未找到该草稿', 'error');
+            return false;
+        }
+        
+        const draftName = drafts[draftIndex].name;
+        drafts.splice(draftIndex, 1);
+        localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+        
+        showToast(`「${draftName}」已删除`, 'success');
+        return true;
+    } catch (e) {
+        console.error('删除草稿失败:', e);
+        showToast('删除草稿失败，请重试', 'error');
+        return false;
+    }
+}
+
+/**
+ * 获取草稿箱列表
+ * @returns {Array} 草稿列表
+ */
+function getDrafts() {
+    try {
+        return JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+/**
+ * 复制HTML到剪贴板（用于导出）
+ */
+async function copyHTMLToClipboard() {
+    try {
+        const wechatHTML = convertToWechatHTML();
+        
+        // 使用 Clipboard API
+        if (navigator.clipboard && navigator.clipboard.write) {
+            const blob = new Blob([wechatHTML], { type: 'text/html' });
+            const clipboardItem = new ClipboardItem({
+                'text/html': blob,
+                'text/plain': new Blob([quill.getText()], { type: 'text/plain' })
+            });
+            
+            await navigator.clipboard.write([clipboardItem]);
+            showToast('HTML已复制到剪贴板，可直接粘贴到微信公众号后台', 'success');
+        } else {
+            // 降级方案
+            copyUsingExecCommand(wechatHTML);
+        }
+    } catch (error) {
+        console.error('复制失败:', error);
+        try {
+            const wechatHTML = convertToWechatHTML();
+            copyUsingExecCommand(wechatHTML);
+        } catch (e) {
+            showToast('复制失败，请手动选中内容复制', 'error');
+        }
+    }
+}
+
+// ==================== 草稿箱模态框 ====================
+
+/**
+ * 显示保存草稿弹窗
+ */
+function showSaveDraftModal() {
+    // 创建弹窗
+    let modal = document.querySelector('.save-draft-modal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    modal = document.createElement('div');
+    modal.className = 'draft-modal-overlay';
+    modal.innerHTML = `
+        <div class="draft-modal-content">
+            <div class="draft-modal-header">
+                <h4>保存草稿</h4>
+                <button class="draft-modal-close">×</button>
+            </div>
+            <div class="draft-modal-body">
+                <label for="draft-name-input">草稿名称</label>
+                <input type="text" id="draft-name-input" placeholder="${formatDateTime(new Date())}" autocomplete="off">
+            </div>
+            <div class="draft-modal-footer">
+                <button class="btn-preview draft-modal-cancel">取消</button>
+                <button class="btn-save-draft">保存</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 显示动画
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+    });
+    
+    // 聚焦输入框
+    const input = modal.querySelector('#draft-name-input');
+    setTimeout(() => input.focus(), 100);
+    
+    // 关闭按钮
+    modal.querySelector('.draft-modal-close').addEventListener('click', () => closeModal(modal));
+    modal.querySelector('.draft-modal-cancel').addEventListener('click', () => closeModal(modal));
+    
+    // 保存按钮
+    modal.querySelector('.btn-save-draft').addEventListener('click', () => {
+        const name = input.value.trim() || formatDateTime(new Date());
+        if (saveToDraftBox(name)) {
+            closeModal(modal);
+        }
+    });
+    
+    // 回车保存
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const name = input.value.trim() || formatDateTime(new Date());
+            if (saveToDraftBox(name)) {
+                closeModal(modal);
+            }
+        }
+    });
+    
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal(modal);
+        }
+    });
+}
+
+/**
+ * 显示草稿箱弹窗
+ */
+function showDraftBoxModal() {
+    const drafts = getDrafts();
+    
+    // 创建弹窗
+    let modal = document.querySelector('.draft-box-modal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    modal = document.createElement('div');
+    modal.className = 'draft-modal-overlay draft-box-modal';
+    
+    let draftsHtml = '';
+    if (drafts.length === 0) {
+        draftsHtml = '<div class="draft-box-empty">草稿箱为空</div>';
+    } else {
+        draftsHtml = drafts.map(draft => {
+            const preview = stripHtml(draft.content).substring(0, 50);
+            const date = formatDateTime(new Date(draft.timestamp));
+            return `
+                <div class="draft-item" data-id="${draft.id}">
+                    <div class="draft-item-info">
+                        <div class="draft-item-name">${escapeHtml(draft.name)}</div>
+                        <div class="draft-item-meta">
+                            <span>${date}</span>
+                            <span class="draft-item-preview">${escapeHtml(preview)}${preview.length >= 50 ? '...' : ''}</span>
+                        </div>
+                    </div>
+                    <div class="draft-item-actions">
+                        <button class="btn-draft-load">加载</button>
+                        <button class="btn-draft-delete">删除</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    modal.innerHTML = `
+        <div class="draft-modal-content draft-box-content">
+            <div class="draft-modal-header">
+                <h4>草稿箱 (${drafts.length})</h4>
+                <button class="draft-modal-close">×</button>
+            </div>
+            <div class="draft-box-list">
+                ${draftsHtml}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 显示动画
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+    });
+    
+    // 关闭按钮
+    modal.querySelector('.draft-modal-close').addEventListener('click', () => closeModal(modal));
+    
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal(modal);
+        }
+    });
+    
+    // 绑定加载和删除按钮事件
+    modal.querySelectorAll('.btn-draft-load').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const draftId = e.target.closest('.draft-item').dataset.id;
+            if (loadDraft(draftId)) {
+                closeModal(modal);
+            }
+        });
+    });
+    
+    modal.querySelectorAll('.btn-draft-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const draftId = e.target.closest('.draft-item').dataset.id;
+            const draftItem = e.target.closest('.draft-item');
+            const draftName = draftItem.querySelector('.draft-item-name').textContent;
+            
+            // 显示确认删除提示
+            showDeleteConfirmModal(draftId, draftName, () => {
+                if (deleteDraft(draftId)) {
+                    // 刷新草稿箱
+                    const newDrafts = getDrafts();
+                    const listContainer = modal.querySelector('.draft-box-list');
+                    if (newDrafts.length === 0) {
+                        listContainer.innerHTML = '<div class="draft-box-empty">草稿箱为空</div>';
+                    } else {
+                        // 重新渲染（移除被删除的项）
+                        draftItem.remove();
+                        // 更新标题计数
+                        modal.querySelector('.draft-modal-header h4').textContent = `草稿箱 (${newDrafts.length})`;
+                    }
+                }
+            });
+        });
+    });
+}
+
+/**
+ * 显示删除确认弹窗
+ */
+function showDeleteConfirmModal(draftId, draftName, onConfirm) {
+    let modal = document.querySelector('.delete-confirm-modal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    modal = document.createElement('div');
+    modal.className = 'draft-modal-overlay delete-confirm-modal';
+    modal.innerHTML = `
+        <div class="draft-modal-content delete-confirm-content">
+            <div class="draft-modal-header">
+                <h4>确认删除</h4>
+                <button class="draft-modal-close">×</button>
+            </div>
+            <div class="draft-modal-body">
+                <p>确定要删除草稿「${escapeHtml(draftName)}」吗？此操作不可恢复。</p>
+            </div>
+            <div class="draft-modal-footer">
+                <button class="btn-preview delete-confirm-cancel">取消</button>
+                <button class="btn-delete-confirm">删除</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+    });
+    
+    modal.querySelector('.draft-modal-close').addEventListener('click', () => closeModal(modal));
+    modal.querySelector('.delete-confirm-cancel').addEventListener('click', () => closeModal(modal));
+    
+    modal.querySelector('.btn-delete-confirm').addEventListener('click', () => {
+        closeModal(modal);
+        onConfirm();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal(modal);
+        }
+    });
+}
+
+/**
+ * 关闭弹窗
+ */
+function closeModal(modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
+}
+
+// ==================== 工具函数 ====================
+
+/**
+ * 生成UUID
+ */
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
+ * 格式化日期时间为 YYYY-MM-DD HH:mm
+ */
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+/**
+ * 去除HTML标签
+ */
+function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+
+/**
+ * HTML转义
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 /**
@@ -889,78 +1374,7 @@ function restoreTemplateFromStorage() {
 }
 
 /**
- * 检查并提示恢复草稿
- */
-function checkDraft() {
-    try {
-        const savedDraft = localStorage.getItem(STORAGE_KEY);
-        if (!savedDraft) return;
-        
-        const draft = JSON.parse(savedDraft);
-        if (!draft.content || !draft.template) return;
-        
-        // 显示恢复提示
-        showDraftRecovery(draft);
-    } catch (e) {
-        console.error('检查草稿失败:', e);
-    }
-}
-
-/**
- * 显示草稿恢复提示
- */
-function showDraftRecovery(draft) {
-    // 创建恢复提示框
-    const recoveryEl = document.createElement('div');
-    recoveryEl.className = 'draft-recovery';
-    recoveryEl.innerHTML = `
-        <span class="draft-recovery-text">📄 发现上次编辑的草稿，是否恢复？</span>
-        <div class="draft-recovery-actions">
-            <button class="btn-draft-discard" id="discard-draft">丢弃</button>
-            <button class="btn-draft-recover" id="recover-draft">恢复</button>
-        </div>
-    `;
-    document.body.appendChild(recoveryEl);
-    
-    // 显示动画
-    requestAnimationFrame(() => {
-        recoveryEl.classList.add('show');
-    });
-    
-    // 恢复按钮
-    document.getElementById('recover-draft').addEventListener('click', function() {
-        recoverDraft(draft);
-        recoveryEl.classList.remove('show');
-        setTimeout(() => recoveryEl.remove(), 300);
-    });
-    
-    // 丢弃按钮
-    document.getElementById('discard-draft').addEventListener('click', function() {
-        clearDraft();
-        recoveryEl.classList.remove('show');
-        setTimeout(() => recoveryEl.remove(), 300);
-    });
-}
-
-/**
- * 恢复草稿
- */
-function recoverDraft(draft) {
-    // 恢复模板
-    if (TEMPLATES[draft.template]) {
-        currentTemplate = draft.template;
-        initTemplateSelector();
-    }
-    
-    // 恢复内容
-    quill.root.innerHTML = draft.content;
-    syncToPreview();
-    
-    showToast('草稿已恢复', 'success');
-}
-
-/**
- * 清除草稿
+ * 清除草稿（兼容旧版本）
  */
 function clearDraft() {
     try {
