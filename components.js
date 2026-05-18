@@ -487,18 +487,23 @@ const COMPONENTS = {
             },
             {
                 id: 'other-qrcode',
-                name: '二维码占位区',
-                icon: '📱',
-                description: '二维码展示区域',
+                name: '插入图片',
+                icon: '🖼',
+                description: '插入一张图片（输入图片URL）',
                 getFields: () => [
-                    { key: 'hint', label: '提示文字', type: 'text', default: '扫码关注' }
+                    { key: 'imageUrl', label: '图片地址（URL）', type: 'text', default: '' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 24px auto; text-align: center; max-width: 200px;">
-<section style="width: 160px; height: 160px; background-color: #f5f5f5; border: 2px dashed ${color}; border-radius: 8px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
-<p style="margin: 0; color: #cccccc; font-size: 48px;">⬜</p>
+                getHtml: (color, fields) => {
+                    const url = (fields.imageUrl || '').trim();
+                    if (url) {
+                        return `<section style="margin: 16px 0; text-align: center;"><img src="${url}" style="max-width: 100%; height: auto; border-radius: 4px;" alt="图片"></section>`;
+                    }
+                    return `<section style="margin: 24px auto; text-align: center; max-width: 200px;">
+<section style="width: 160px; height: 160px; background-color: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc;">
+<p style="margin: 0; color: #999; font-size: 14px;">请输入图片地址</p>
 </section>
-<p style="margin: 0; font-size: 14px; color: #666666;">${fields.hint || '扫码关注'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'other-sticker',

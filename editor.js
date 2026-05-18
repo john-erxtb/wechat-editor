@@ -253,6 +253,9 @@ function updatePreview() {
     // 获取编辑器HTML内容
     let editorHTML = quill.root.innerHTML;
     
+    // 先将Quill的对齐类转换为内联样式（预览区没有Quill的CSS，类名无效）
+    editorHTML = convertAlignClassesToInline(editorHTML);
+    
     // 应用模板样式转换
     const styledHTML = applyTemplateStyles(editorHTML, currentTemplate);
     
@@ -266,6 +269,30 @@ function updatePreview() {
     previewContent.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', e => e.preventDefault());
     });
+}
+
+/**
+ * 将Quill的对齐CSS类转换为内联样式
+ * 预览区和微信都不识别ql-align-*类，需要转为style
+ */
+function convertAlignClassesToInline(html) {
+    html = html.replace(/class="([^"]*)ql-align-center([^"]*)"/g, (match, before, after) => {
+        const cls = (before + after).trim();
+        return cls ? `class="${cls}" style="text-align: center;"` : `style="text-align: center;"`;
+    });
+    html = html.replace(/class="([^"]*)ql-align-right([^"]*)"/g, (match, before, after) => {
+        const cls = (before + after).trim();
+        return cls ? `class="${cls}" style="text-align: right;"` : `style="text-align: right;"`;
+    });
+    html = html.replace(/class="([^"]*)ql-align-justify([^"]*)"/g, (match, before, after) => {
+        const cls = (before + after).trim();
+        return cls ? `class="${cls}" style="text-align: justify;"` : `style="text-align: justify;"`;
+    });
+    html = html.replace(/class="([^"]*)ql-align-left([^"]*)"/g, (match, before, after) => {
+        const cls = (before + after).trim();
+        return cls ? `class="${cls}"` : '';
+    });
+    return html;
 }
 
 /**
@@ -1100,8 +1127,15 @@ function showComponentPreview(componentId, initialValues, initialColor) {
     // 新建模式：保存当前光标位置
     if (!initialValues) {
         editingComponentElement = null;
+        // 优先用selection-change已保存的位置，避免getSelection返回null时覆盖
         const selection = quill.getSelection();
-        savedCursorPosition = selection ? selection.index : quill.getLength() - 1;
+        if (selection) {
+            savedCursorPosition = selection.index;
+        }
+        // 如果savedCursorPosition还没设置过，则用末尾
+        if (savedCursorPosition === null) {
+            savedCursorPosition = quill.getLength() - 1;
+        }
     }
     
     // 编辑模式：使用传入的颜色
