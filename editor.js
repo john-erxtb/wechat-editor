@@ -39,13 +39,29 @@ function initQuillEditor() {
     class WechatComponentBlot extends BlockEmbed {
         static create(value) {
             const node = super.create();
-            node.innerHTML = value;
+            if (typeof value === 'object' && value !== null) {
+                node.innerHTML = value.html;
+                node.dataset.componentId = value.componentId || '';
+                node.dataset.fieldValues = JSON.stringify(value.fieldValues || {});
+                node.dataset.componentColor = value.color || '#1a73e8';
+            } else {
+                node.innerHTML = value;
+            }
             node.setAttribute('contenteditable', 'false');
             node.classList.add('wechat-component');
             return node;
         }
         
         static value(node) {
+            const componentId = node.dataset.componentId;
+            if (componentId) {
+                return {
+                    html: node.innerHTML,
+                    componentId: componentId,
+                    fieldValues: node.dataset.fieldValues ? JSON.parse(node.dataset.fieldValues) : {},
+                    color: node.dataset.componentColor || '#1a73e8'
+                };
+            }
             return node.innerHTML;
         }
     }
@@ -94,6 +110,43 @@ function initQuillEditor() {
     // 内容变化时同步到预览区
     quill.on('text-change', function() {
         syncToPreview();
+    });
+
+    // === 组件交互：点击选中、双击编辑、Delete删除 ===
+    // 点击组件选中
+    quill.root.addEventListener('mousedown', function(e) {
+        const component = e.target.closest('.wechat-component');
+        if (component) {
+            e.preventDefault();
+            document.querySelectorAll('.wechat-component.selected').forEach(c => c.classList.remove('selected'));
+            component.classList.add('selected');
+        } else {
+            document.querySelectorAll('.wechat-component.selected').forEach(c => c.classList.remove('selected'));
+        }
+    });
+
+    // 双击组件打开编辑弹窗
+    quill.root.addEventListener('dblclick', function(e) {
+        const component = e.target.closest('.wechat-component');
+        if (component && component.dataset.componentId) {
+            editComponent(component);
+        }
+    });
+
+    // Delete/Backspace删除选中组件
+    quill.root.addEventListener('keydown', function(e) {
+        const selected = document.querySelector('.wechat-component.selected');
+        if (!selected) return;
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            e.stopPropagation();
+            const blot = Quill.find(selected);
+            if (blot) {
+                blot.remove();
+                syncToPreview();
+                showToast('组件已删除', 'success');
+            }
+        }
     });
 
     // 设置初始内容示例
@@ -254,11 +307,19 @@ function processElements(container, styles) {
         applyInlineStyle(el, styles.h3);
     });
     
-    // 处理p标签（跳过组件内部的p和blockquote内的p）
+    // 处理p标签（组件内部也应用text-align）
     container.querySelectorAll('p').forEach(el => {
-        // 如果在带样式的section内（组件内容），跳过
         const parentSection = el.closest('section[style]');
-        if (parentSection) return;
+        if (parentSection) {
+            // 组件内部的p：只应用text-align，不覆盖其他样式
+            if (styles.p) {
+                const styleObj = parseStyleString(styles.p);
+                if (styleObj.textAlign) {
+                    el.style.textAlign = styleObj.textAlign;
+                }
+            }
+            return;
+        }
         if (!el.closest('blockquote')) {
             applyInlineStyle(el, styles.p);
         }
@@ -890,6 +951,8 @@ function updateSaveStatus(status) {
 
 let currentCategory = 'card';
 let currentColor = '#1a73e8';
+let savedCursorPosition = null;   // 保存光标位置（用于在指定位置插入组件）
+let editingComponentElement = null; // 正在编辑的组件DOM元素（null表示新建）
 
 /**
  * 初始化组件面板
@@ -996,14 +1059,29 @@ let currentPreviewComponent = null;
 
 /**
  * 显示组件预览弹窗
+ * @param {string} componentId - 组件ID
+ * @param {Object} [initialValues] - 编辑模式时的初始值
+ * @param {string} [initialColor] - 编辑模式时的初始颜色
  */
-function showComponentPreview(componentId) {
+function showComponentPreview(componentId, initialValues, initialColor) {
     const components = getComponentsByCategory(currentCategory);
     const component = components.find(c => c.id === componentId);
     
     if (!component) return;
     
     currentPreviewComponent = component;
+    
+    // 新建模式：保存当前光标位置
+    if (!initialValues) {
+        editingComponentElement = null;
+        const selection = quill.getSelection();
+        savedCursorPosition = selection ? selection.index : quill.getLength() - 1;
+    }
+    
+    // 编辑模式：使用传入的颜色
+    if (initialColor) {
+        currentColor = initialColor;
+    }
     
     // 创建弹窗
     let modal = document.querySelector('.component-preview-modal');
@@ -1012,8 +1090,13 @@ function showComponentPreview(componentId) {
         document.body.appendChild(modal);
     }
     
-    // 填充标题
-    modal.querySelector('.component-preview-header h4').textContent = component.name;
+    // 填充标题（区分新建/编辑）
+    const headerTitle = modal.querySelector('.component-preview-header h4');
+    headerTitle.textContent = initialValues ? '编辑组件 - ' + component.name : component.name;
+    
+    // 更新按钮文字
+    const insertBtn = modal.querySelector('.btn-insert');
+    insertBtn.textContent = initialValues ? '更新组件' : '插入到编辑器';
     
     // 获取组件字段定义
     const fields = component.getFields ? component.getFields() : [];
@@ -1024,18 +1107,19 @@ function showComponentPreview(componentId) {
         inputContainer.innerHTML = '<div class="no-input-hint">此组件无需输入内容</div>';
     } else {
         inputContainer.innerHTML = fields.map(field => {
+            const val = initialValues && initialValues[field.key] !== undefined ? initialValues[field.key] : field.default;
             if (field.type === 'textarea') {
                 return `
                     <div class="input-field-group">
                         <label for="field-${field.key}">${field.label}</label>
-                        <textarea id="field-${field.key}" data-key="${field.key}" placeholder="${field.default}">${field.default}</textarea>
+                        <textarea id="field-${field.key}" data-key="${field.key}" placeholder="${field.default}">${val}</textarea>
                     </div>
                 `;
             } else {
                 return `
                     <div class="input-field-group">
                         <label for="field-${field.key}">${field.label}</label>
-                        <input type="text" id="field-${field.key}" data-key="${field.key}" value="${field.default}" placeholder="${field.default}">
+                        <input type="text" id="field-${field.key}" data-key="${field.key}" value="${val}" placeholder="${field.default}">
                     </div>
                 `;
             }
@@ -1115,131 +1199,6 @@ function createPreviewModal() {
         modal.classList.remove('show');
     });
     
-    // 插入按钮
+    // 插入按钮（区分新建/编辑模式）
     modal.querySelector('.btn-insert').addEventListener('click', () => {
-        insertComponent();
-        modal.classList.remove('show');
-    });
-    
-    // 点击背景关闭（使用mousedown/mouseup组合避免输入框选择文字误触）
-    let modalMouseDownTarget = null;
-    modal.addEventListener('mousedown', (e) => {
-        modalMouseDownTarget = e.target;
-    });
-    modal.addEventListener('mouseup', (e) => {
-        if (e.target === modal && modalMouseDownTarget === modal) {
-            modal.classList.remove('show');
-        }
-        modalMouseDownTarget = null;
-    });
-    
-    return modal;
-}
-
-/**
- * 初始化预览弹窗（备用）
- */
-function initPreviewModal() {
-    // 弹窗会在首次需要时动态创建
-}
-
-/**
- * 插入组件到编辑器
- */
-function insertComponent() {
-    if (!currentPreviewComponent) return;
-    
-    try {
-        // 收集用户输入的值
-        const modal = document.querySelector('.component-preview-modal');
-        const fieldValues = {};
-        
-        if (modal) {
-            modal.querySelectorAll('.input-fields-container input, .input-fields-container textarea').forEach(input => {
-                const key = input.dataset.key;
-                const value = input.value;
-                fieldValues[key] = value;
-            });
-        }
-        
-        // 使用用户输入生成HTML
-        const html = currentPreviewComponent.getHtml(currentColor, fieldValues);
-        
-        // 获取当前光标位置，如果没有光标则追加到末尾
-        let insertIndex = quill.getLength() - 1; // Quill末尾位置
-        const selection = quill.getSelection();
-        if (selection) {
-            insertIndex = selection.index;
-        }
-        
-        // 使用Quill API插入自定义Blot
-        quill.insertEmbed(insertIndex, 'wechat-component', html, 'user');
-        
-        // 将光标移到组件后面
-        quill.setSelection(insertIndex + 1, 0);
-        
-        // 同步预览
-        syncToPreview();
-        
-        showToast(`「${currentPreviewComponent.name}」已插入`, 'success');
-    } catch (e) {
-        console.error('插入组件失败:', e);
-        showToast('插入失败，请重试', 'error');
-    }
-}
-
-// ==================== 工具函数 ====================
-
-/**
- * 显示Toast提示
- * @param {string} message - 提示消息
- * @param {string} type - 提示类型 (success/error/info)
- */
-function showToast(message, type = 'info') {
-    // 移除已有的toast
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    // 创建新的toast
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    // 显示动画
-    requestAnimationFrame(() => {
-        toast.classList.add('show');
-    });
-    
-    // 3秒后自动移除
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-/**
- * 更新状态栏时间
- */
-function updateTime() {
-    const timeEl = document.querySelector('.status-time');
-    if (timeEl) {
-        const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        timeEl.textContent = `${hours}:${minutes}`;
-    }
-}
-
-// ==================== 导出函数供测试使用 ====================
-if (typeof window !== 'undefined') {
-    window.WechatEditor = {
-        getQuill: () => quill,
-        getCurrentTemplate: () => currentTemplate,
-        convertToWechatHTML,
-        copyToWechat,
-        switchTemplate
-    };
-}
+        if (editingComponentEleme

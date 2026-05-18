@@ -1066,9 +1066,9 @@ html, body {
     border: none;
     background: none;
     user-select: none;
+    cursor: pointer;
+    transition: outline 0.15s ease;
 }
 
 .ql-editor .wechat-component:hover {
-    outline: 2px dashed #1a73e8;
-    outline-offset: 2px;
-}
+   
