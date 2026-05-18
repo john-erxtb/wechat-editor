@@ -351,11 +351,13 @@ function processElements(container, styles) {
     container.querySelectorAll('p').forEach(el => {
         const parentSection = el.closest('section[style]');
         if (parentSection) {
-            // 组件内部p：保留已有text-align，否则从模板继承
+            // 组件内部p：绝对不从模板覆盖text-align（应继承父section的对齐）
             if (styles.p) {
                 const styleObj = parseStyleString(styles.p);
-                if (styleObj.textAlign && !el.style.textAlign) {
-                    el.style.textAlign = styleObj.textAlign;
+                for (const [property, value] of Object.entries(styleObj)) {
+                    if (property !== 'textAlign') {
+                        el.style[property] = value;
+                    }
                 }
             }
             return;
