@@ -33,6 +33,29 @@ document.addEventListener('DOMContentLoaded', function() {
  * 初始化 Quill 富文本编辑器
  */
 function initQuillEditor() {
+    // 注册微信组件自定义Blot（在创建Quill实例之前注册）
+    const BlockEmbed = Quill.import('blots/block/embed');
+
+    class WechatComponentBlot extends BlockEmbed {
+        static create(value) {
+            const node = super.create();
+            node.innerHTML = value;
+            node.setAttribute('contenteditable', 'false');
+            node.classList.add('wechat-component');
+            return node;
+        }
+        
+        static value(node) {
+            return node.innerHTML;
+        }
+    }
+
+    WechatComponentBlot.blotName = 'wechat-component';
+    WechatComponentBlot.tagName = 'div';
+    WechatComponentBlot.className = 'wechat-component';
+
+    Quill.register(WechatComponentBlot);
+
     // 定义自定义工具栏
     const toolbarOptions = [
         // 标题
@@ -457,6 +480,15 @@ function cleanForWechat(html) {
     html = html.replace(/\sclass="ql-indent-[0-9]"/g, '');
     html = html.replace(/<p><br><\/p>/g, '<p style="margin: 12px 0;"><br></p>');
     html = html.replace(/<p><\/p>/g, '<p style="margin: 12px 0;"></p>');
+    
+    // 将div.wechat-component转换为section（微信兼容）
+    html = html.replace(/<div[^>]*class="[^"]*wechat-component[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, (match, content) => {
+        // 保留content但去掉div标签
+        return content;
+    });
+    
+    // 移除wechat-component相关的属性
+    html = html.replace(/\scontenteditable="false"/gi, '');
     
     // 移除不支持的标签但保留内容
     html = html.replace(/<\/?(span)[^>]*>/gi, (match, tag) => {
@@ -1089,11 +1121,16 @@ function createPreviewModal() {
         modal.classList.remove('show');
     });
     
-    // 点击背景关闭
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
+    // 点击背景关闭（使用mousedown/mouseup组合避免输入框选择文字误触）
+    let modalMouseDownTarget = null;
+    modal.addEventListener('mousedown', (e) => {
+        modalMouseDownTarget = e.target;
+    });
+    modal.addEventListener('mouseup', (e) => {
+        if (e.target === modal && modalMouseDownTarget === modal) {
             modal.classList.remove('show');
         }
+        modalMouseDownTarget = null;
     });
     
     return modal;
@@ -1128,12 +1165,18 @@ function insertComponent() {
         // 使用用户输入生成HTML
         const html = currentPreviewComponent.getHtml(currentColor, fieldValues);
         
-        // 确保编辑器有焦点
-        quill.focus();
+        // 获取当前光标位置，如果没有光标则追加到末尾
+        let insertIndex = quill.getLength() - 1; // Quill末尾位置
+        const selection = quill.getSelection();
+        if (selection) {
+            insertIndex = selection.index;
+        }
         
-        // 使用 document.execCommand 在光标位置插入HTML
-        // 这个方法会绕过Quill的HTML过滤，保留section标签和内联样式
-        document.execCommand('insertHTML', false, html);
+        // 使用Quill API插入自定义Blot
+        quill.insertEmbed(insertIndex, 'wechat-component', html, 'user');
+        
+        // 将光标移到组件后面
+        quill.setSelection(insertIndex + 1, 0);
         
         // 同步预览
         syncToPreview();

@@ -1058,3 +1058,17 @@ html, body {
     color: #1a73e8;
     text-decoration: none;
 }
+
+/* ========== 编辑器中的微信组件样式 ========== */
+.ql-editor .wechat-component {
+    margin: 8px 0;
+    padding: 0;
+    border: none;
+    background: none;
+    user-select: none;
+}
+
+.ql-editor .wechat-component:hover {
+    outline: 2px dashed #1a73e8;
+    outline-offset: 2px;
+}
