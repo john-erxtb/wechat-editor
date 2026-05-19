@@ -7,6 +7,33 @@
 let quill = null;
 let currentTemplate = 'classicBlue';
 let updateTimeout = null;
+let currentBgColor = '#ffffff';  // 当前背景色
+
+// 背景色预设
+const BG_COLORS = [
+    { color: '#ffffff', name: '白色', type: 'light' },
+    { color: '#f5f5f5', name: '浅灰', type: 'light' },
+    { color: '#faf8f0', name: '米白', type: 'light' },
+    { color: '#f0f5ff', name: '浅蓝', type: 'light' },
+    { color: '#f0fff0', name: '浅绿', type: 'light' },
+    { color: '#fff0f0', name: '浅粉', type: 'light' },
+    { color: '#f5f0ff', name: '浅紫', type: 'light' },
+    { color: '#fffef0', name: '浅黄', type: 'light' },
+    { color: '#333333', name: '深灰', type: 'dark' },
+    { color: '#1a1a2e', name: '深蓝', type: 'dark' },
+    { color: '#1a2e1a', name: '深绿', type: 'dark' },
+    { color: '#1a1a1a', name: '黑色', type: 'dark' }
+];
+
+// localStorage keys
+const STORAGE_KEY = 'wechat-editor-autosave';
+const DRAFTS_KEY = 'wechat-editor-drafts';
+const STORAGE_TEMPLATE_KEY = 'wechat-editor-template';
+const STORAGE_BG_COLOR_KEY = 'wechat-editor-bgcolor';
+
+let autoSaveTimer = null;
+let isContentChanged = false;
+let lastSavedContent = '';  // 用于比较内容是否变化
 
 // ==================== 初始化 ====================
 
@@ -19,6 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initActionButtons();
     initAutoSave();
     initComponentPanel();
+    initBgColorSelector();  // 初始化背景色选择器
+    restoreBgColorFromStorage();  // 恢复保存的背景色
     updateTime();
     setInterval(updateTime, 1000);
     
@@ -523,7 +552,12 @@ function wrapWithSection(html) {
         // 如果还没有section包裹，则包裹
         const styles = getTemplateStyles(currentTemplate);
         const containerStyle = styles.container.replace(/"/g, "'");
-        return `<section style="${containerStyle}">${html}</section>`;
+        
+        // 添加背景色
+        const bgStyle = `background-color: ${currentBgColor};`;
+        const combinedStyle = bgStyle + containerStyle;
+        
+        return `<section style="${combinedStyle}">${html}</section>`;
     }
     return html;
 }
@@ -536,20 +570,41 @@ function wrapWithSection(html) {
 function wrapContainerStyles(html) {
     const styles = getTemplateStyles(currentTemplate);
     const containerStyle = styles.container;
+    const isDark = isDarkColor(currentBgColor);
     
-    // 如果已经有section，添加容器样式
+    // 如果已经有section，添加容器样式和背景色
     if (html.includes('<section')) {
         html = html.replace(/<section([^>]*)>/i, (match, attrs) => {
             // 如果section已有样式，合并
             if (attrs.includes('style=')) {
-                return match;
+                // 在已有样式中添加背景色
+                return match.replace(/style="([^"]*)"/, (styleMatch, existingStyle) => {
+                    const bgStyle = `background-color: ${currentBgColor};`;
+                    // 深色背景时添加浅色文字
+                    let textColorStyle = '';
+                    if (isDark) {
+                        textColorStyle = 'color: #f5f5f5;';
+                    }
+                    return `style="${bgStyle}${textColorStyle}${existingStyle}"`;
+                });
             }
-            return `<section${attrs} style="${containerStyle}">`;
+            // 添加背景色
+            const bgStyle = `background-color: ${currentBgColor};`;
+            let textColorStyle = '';
+            if (isDark) {
+                textColorStyle = 'color: #f5f5f5;';
+            }
+            return `<section${attrs} style="${bgStyle}${textColorStyle}${containerStyle}">`;
         });
         
         // 如果section没有样式属性
         if (!/<section[^>]*style=/i.test(html)) {
-            html = html.replace(/<section>/i, `<section style="${containerStyle}">`);
+            const bgStyle = `background-color: ${currentBgColor};`;
+            let textColorStyle = '';
+            if (isDark) {
+                textColorStyle = 'color: #f5f5f5;';
+            }
+            html = html.replace(/<section>/i, `<section style="${bgStyle}${textColorStyle}${containerStyle}">`);
         }
     }
     
@@ -790,13 +845,6 @@ function clearEditor() {
 
 // ==================== 本地自动保存（增强版） ====================
 
-const STORAGE_KEY = 'wechat-editor-autosave';      // 自动保存key
-const DRAFTS_KEY = 'wechat-editor-drafts';        // 草稿箱key
-const STORAGE_TEMPLATE_KEY = 'wechat-editor-template';
-let autoSaveTimer = null;
-let isContentChanged = false;
-let lastSavedContent = '';  // 用于比较内容是否变化
-
 /**
  * 初始化自动保存
  */
@@ -860,6 +908,7 @@ function autoSaveContent() {
             content: content,
             previewHtml: previewHtml,
             template: currentTemplate,
+            bgColor: currentBgColor,  // 保存背景色
             timestamp: Date.now()
         };
         
@@ -893,6 +942,13 @@ function restoreAutoSave() {
         if (TEMPLATES[data.template]) {
             currentTemplate = data.template;
             initTemplateSelector();
+        }
+        
+        // 恢复背景色
+        if (data.bgColor) {
+            currentBgColor = data.bgColor;
+            updatePreviewBgColor();
+            updateBgColorPickerUI(data.bgColor);
         }
         
         // 恢复内容
@@ -942,6 +998,7 @@ function saveToDraftBox(name) {
             content: content,
             previewHtml: previewHtml,
             template: currentTemplate,
+            bgColor: currentBgColor,  // 保存背景色
             timestamp: Date.now()
         };
         
@@ -985,6 +1042,18 @@ function loadDraft(draftId) {
         if (TEMPLATES[draft.template]) {
             currentTemplate = draft.template;
             initTemplateSelector();
+        }
+        
+        // 恢复背景色
+        if (draft.bgColor) {
+            currentBgColor = draft.bgColor;
+            updatePreviewBgColor();
+            updateBgColorPickerUI(draft.bgColor);
+        } else {
+            // 默认为白色
+            currentBgColor = '#ffffff';
+            updatePreviewBgColor();
+            updateBgColorPickerUI('#ffffff');
         }
         
         // 恢复内容
@@ -1436,6 +1505,161 @@ function initComponentPanel() {
     
     // 初始化预览弹窗
     initPreviewModal();
+}
+
+// ==================== 背景色选择器 ====================
+
+/**
+ * 初始化背景色选择器
+ */
+function initBgColorSelector() {
+    const picker = document.getElementById('bg-color-picker');
+    const customInput = document.getElementById('bg-color-custom-input');
+    const resetBtn = document.getElementById('reset-bg-btn');
+    
+    if (!picker) return;
+    
+    // 渲染背景色色块
+    picker.innerHTML = BG_COLORS.map(item => `
+        <span class="bg-color-swatch ${item.type} ${item.color === currentBgColor ? 'active' : ''}" 
+              data-color="${item.color}"
+              style="background-color: ${item.color};"
+              title="${item.name}">
+        </span>
+    `).join('');
+    
+    // 绑定点击事件
+    picker.querySelectorAll('.bg-color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            const color = this.dataset.color;
+            setBgColor(color);
+        });
+    });
+    
+    // 自定义颜色输入
+    if (customInput) {
+        customInput.addEventListener('input', function() {
+            setBgColor(this.value);
+        });
+        
+        customInput.addEventListener('change', function() {
+            // 更新选择器UI
+            updateBgColorPickerUI(this.value);
+        });
+    }
+    
+    // 重置按钮
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            setBgColor('#ffffff');
+        });
+    }
+}
+
+/**
+ * 设置背景色
+ * @param {string} color - 颜色值
+ */
+function setBgColor(color) {
+    currentBgColor = color;
+    
+    // 更新选择器UI
+    updateBgColorPickerUI(color);
+    
+    // 更新预览区背景色
+    updatePreviewBgColor();
+    
+    // 保存到localStorage
+    saveBgColorToStorage();
+    
+    // 同步更新预览
+    syncToPreview();
+}
+
+/**
+ * 更新背景色选择器UI
+ * @param {string} color - 当前颜色值
+ */
+function updateBgColorPickerUI(color) {
+    const picker = document.getElementById('bg-color-picker');
+    const customInput = document.getElementById('bg-color-custom-input');
+    
+    if (picker) {
+        picker.querySelectorAll('.bg-color-swatch').forEach(swatch => {
+            swatch.classList.toggle('active', swatch.dataset.color === color);
+        });
+    }
+    
+    if (customInput) {
+        customInput.value = color;
+    }
+}
+
+/**
+ * 更新预览区背景色
+ */
+function updatePreviewBgColor() {
+    const wrapper = document.querySelector('.preview-content-wrapper');
+    if (wrapper) {
+        wrapper.style.backgroundColor = currentBgColor;
+    }
+}
+
+/**
+ * 保存背景色到localStorage
+ */
+function saveBgColorToStorage() {
+    try {
+        localStorage.setItem(STORAGE_BG_COLOR_KEY, currentBgColor);
+    } catch (e) {
+        console.error('保存背景色失败:', e);
+    }
+}
+
+/**
+ * 从localStorage恢复背景色
+ */
+function restoreBgColorFromStorage() {
+    try {
+        const savedColor = localStorage.getItem(STORAGE_BG_COLOR_KEY);
+        if (savedColor) {
+            currentBgColor = savedColor;
+            updatePreviewBgColor();
+            updateBgColorPickerUI(savedColor);
+        }
+    } catch (e) {
+        console.error('恢复背景色失败:', e);
+    }
+}
+
+/**
+ * 判断颜色是否为深色（需要浅色文字）
+ * @param {string} color - 颜色值（十六进制）
+ * @returns {boolean} 是否为深色
+ */
+function isDarkColor(color) {
+    // 移除 # 号
+    color = color.replace('#', '');
+    
+    // 转换为 RGB
+    let r, g, b;
+    if (color.length === 3) {
+        r = parseInt(color[0] + color[0], 16);
+        g = parseInt(color[1] + color[1], 16);
+        b = parseInt(color[2] + color[2], 16);
+    } else if (color.length === 6) {
+        r = parseInt(color.substring(0, 2), 16);
+        g = parseInt(color.substring(2, 4), 16);
+        b = parseInt(color.substring(4, 6), 16);
+    } else {
+        return false;
+    }
+    
+    // 计算亮度（使用标准的相对亮度公式）
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // 亮度低于 128 视为深色
+    return brightness < 128;
 }
 
 /**

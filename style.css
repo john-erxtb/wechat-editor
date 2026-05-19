@@ -357,11 +357,115 @@ html, body {
     align-items: center;
 }
 
-/* ========== 预览内容区 ========== */
+/* ========== 背景色选择器 ========== */
+.bg-color-selector {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed #e0e0e0;
+}
+
+.bg-color-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.bg-color-header h3 {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+    font-weight: 500;
+}
+
+.btn-reset-bg {
+    padding: 4px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    color: #666;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reset-bg:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
+.bg-color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.bg-color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.bg-color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.bg-color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #667eea;
+}
+
+.bg-color-swatch.active::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    color: #333;
+    font-weight: bold;
+}
+
+.bg-color-swatch.light.active::after {
+    color: #666;
+}
+
+.bg-color-swatch.dark.active::after {
+    color: #fff;
+    text-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+.bg-color-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.custom-color-label {
+    font-size: 12px;
+    color: #999;
+}
+
+.custom-color-input {
+    width: 36px;
+    height: 28px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px;
+}
+
+/* ========== 预览区背景样式 ========== */
 .preview-content-wrapper {
     height: calc(100% - 44px);
     overflow-y: auto;
     background: white;
+    transition: background-color 0.3s ease;
 }
 
 .preview-content {
