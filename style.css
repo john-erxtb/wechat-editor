@@ -997,6 +997,80 @@ html, body {
 .preview-content.template-forestGreen blockquote { background: #f0fdf4; border-left-color: #22c55e; }
 .preview-content.template-forestGreen strong { color: #22c55e; }
 
+/* ========== 文字颜色选择器样式 ========== */
+.text-color-picker-wrapper {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+}
+
+.text-color-picker-wrapper label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.text-color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.text-color-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    position: relative;
+}
+
+.text-color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.text-color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #667eea;
+}
+
+.text-color-swatch.default {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    color: #888;
+    font-weight: 500;
+}
+
+.text-color-swatch.default.active {
+    color: #333;
+}
+
+.text-color-custom {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+}
+
+.text-color-custom::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.text-color-custom::-webkit-color-swatch {
+    border-radius: 2px;
+    border: none;
+}
+
 /* 日出模板预览 */
 .preview-content.template-sunrise h1 { background: linear-gradient(90deg, #f59e0b, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .preview-content.template-sunrise h2 { color: #ea580c; border-left: 4px solid #f59e0b; }

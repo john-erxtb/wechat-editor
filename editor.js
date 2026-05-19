@@ -35,6 +35,21 @@ let autoSaveTimer = null;
 let isContentChanged = false;
 let lastSavedContent = '';  // 用于比较内容是否变化
 
+// 文字颜色预设
+const TEXT_COLORS = [
+    { color: '', name: '默认' },
+    { color: '#333333', name: '黑色' },
+    { color: '#ffffff', name: '白色' },
+    { color: '#e74c3c', name: '红色' },
+    { color: '#f39c12', name: '橙色' },
+    { color: '#27ae60', name: '绿色' },
+    { color: '#2980b9', name: '蓝色' },
+    { color: '#8e44ad', name: '紫色' },
+    { color: '#95a5a6', name: '灰色' }
+];
+
+let currentTextColor = '';  // 当前选中的文字颜色（空字符串表示默认）
+
 // ==================== 初始化 ====================
 
 /**
@@ -73,6 +88,7 @@ function initQuillEditor() {
                 node.dataset.componentId = value.componentId || '';
                 node.dataset.fieldValues = JSON.stringify(value.fieldValues || {});
                 node.dataset.componentColor = value.color || '#1a73e8';
+                node.dataset.textColor = value.textColor || '';  // 文字颜色
             } else {
                 node.innerHTML = value;
             }
@@ -88,7 +104,8 @@ function initQuillEditor() {
                     html: node.innerHTML,
                     componentId: componentId,
                     fieldValues: node.dataset.fieldValues ? JSON.parse(node.dataset.fieldValues) : {},
-                    color: node.dataset.componentColor || '#1a73e8'
+                    color: node.dataset.componentColor || '#1a73e8',
+                    textColor: node.dataset.textColor || ''  // 文字颜色
                 };
             }
             return node.innerHTML;
@@ -1862,7 +1879,13 @@ function updateModalPreview() {
     });
     
     // 使用当前颜色和用户输入生成预览HTML
-    const previewHtml = getComponentPreview(currentPreviewComponent, currentColor, fieldValues);
+    let previewHtml = getComponentPreview(currentPreviewComponent, currentColor, fieldValues);
+    
+    // 应用文字颜色
+    if (currentTextColor) {
+        previewHtml = applyTextColorToHtml(previewHtml, currentTextColor);
+    }
+    
     previewArea.innerHTML = previewHtml;
 }
 
@@ -1881,6 +1904,20 @@ function createPreviewModal() {
             <div class="component-preview-body">
                 <div class="component-input-area">
                     <div class="input-fields-container"></div>
+                    <div class="text-color-picker-wrapper">
+                        <label>文字颜色</label>
+                        <div class="text-color-picker">
+                            ${TEXT_COLORS.map(c => `
+                                <span class="text-color-swatch ${c.color === '' ? 'default' : ''} ${c.color === currentTextColor ? 'active' : ''}" 
+                                      data-color="${c.color}"
+                                      style="${c.color ? 'background-color: ' + c.color + '; color: ' + c.color + ';' : ''}"
+                                      title="${c.name}">
+                                    ${c.color === '' ? '默认' : ''}
+                                </span>
+                            `).join('')}
+                            <input type="color" class="text-color-custom" value="${currentTextColor || '#333333'}" title="自定义颜色">
+                        </div>
+                    </div>
                 </div>
                 <div class="component-preview-area">
                     <div class="preview-label">预览效果</div>
@@ -1926,6 +1963,9 @@ function createPreviewModal() {
         modalMouseDownTarget = null;
     });
     
+    // 绑定文字颜色选择事件
+    bindTextColorEvents(modal);
+    
     return modal;
 }
 
@@ -1934,6 +1974,42 @@ function createPreviewModal() {
  */
 function initPreviewModal() {
     // 弹窗会在首次需要时动态创建
+}
+
+/**
+ * 绑定文字颜色选择事件
+ * @param {HTMLElement} modal - 弹窗元素
+ */
+function bindTextColorEvents(modal) {
+    const textColorPicker = modal.querySelector('.text-color-picker');
+    if (!textColorPicker) return;
+    
+    textColorPicker.querySelectorAll('.text-color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            textColorPicker.querySelectorAll('.text-color-swatch').forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+            currentTextColor = this.dataset.color;
+            
+            // 更新自定义颜色输入框
+            const customInput = textColorPicker.querySelector('.text-color-custom');
+            if (customInput && currentTextColor) {
+                customInput.value = currentTextColor;
+            }
+            
+            // 更新预览
+            updateModalPreview();
+        });
+    });
+    
+    // 自定义颜色输入
+    const customInput = textColorPicker.querySelector('.text-color-custom');
+    if (customInput) {
+        customInput.addEventListener('input', function() {
+            textColorPicker.querySelectorAll('.text-color-swatch').forEach(s => s.classList.remove('active'));
+            currentTextColor = this.value;
+            updateModalPreview();
+        });
+    }
 }
 
 /**
@@ -1950,6 +2026,31 @@ function processFieldValues(fields, fieldValues) {
         }
     }
     return processed;
+}
+
+/**
+ * 应用文字颜色到HTML内容（给p和span标签添加color样式）
+ * @param {string} html - 原始HTML
+ * @param {string} color - 颜色值
+ * @returns {string} 应用颜色后的HTML
+ */
+function applyTextColorToHtml(html, color) {
+    if (!color) return html;
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // 给所有p标签添加文字颜色
+    doc.querySelectorAll('p').forEach(el => {
+        el.style.color = color;
+    });
+    
+    // 给所有span标签添加文字颜色
+    doc.querySelectorAll('span').forEach(el => {
+        el.style.color = color;
+    });
+    
+    return doc.body.innerHTML;
 }
 
 /**
@@ -2010,7 +2111,12 @@ function insertComponent() {
         const processedValues = processFieldValues(fields, fieldValues);
         
         // 使用用户输入生成HTML
-        const html = currentPreviewComponent.getHtml(currentColor, processedValues);
+        let html = currentPreviewComponent.getHtml(currentColor, processedValues);
+        
+        // 应用文字颜色
+        if (currentTextColor) {
+            html = applyTextColorToHtml(html, currentTextColor);
+        }
         
         // 使用保存的光标位置（而非默认末尾）
         let insertIndex = savedCursorPosition !== null ? savedCursorPosition : quill.getLength() - 1;
@@ -2020,7 +2126,8 @@ function insertComponent() {
             html: html,
             componentId: currentPreviewComponent.id,
             fieldValues: fieldValues,
-            color: currentColor
+            color: currentColor,
+            textColor: currentTextColor || ''  // 保存文字颜色
         }, 'user');
         
         // 将光标移到组件后面
@@ -2036,6 +2143,8 @@ function insertComponent() {
     }
     
     savedCursorPosition = null;
+    // 重置文字颜色
+    currentTextColor = '';
 }
 
 /**
@@ -2045,6 +2154,7 @@ function editComponent(componentEl) {
     const componentId = componentEl.dataset.componentId;
     const fieldValues = componentEl.dataset.fieldValues ? JSON.parse(componentEl.dataset.fieldValues) : {};
     const color = componentEl.dataset.componentColor || '#1a73e8';
+    const textColor = componentEl.dataset.textColor || '';  // 读取已保存的文字颜色
     
     if (!componentId) {
         showToast('无法识别此组件类型', 'error');
@@ -2062,21 +2172,43 @@ function editComponent(componentEl) {
     editingComponentElement = componentEl;
     currentPreviewComponent = component;
     
-    // 打开编辑弹窗（传入初始值）
-    showComponentEditModal(component, fieldValues, color);
+    // 打开编辑弹窗（传入初始值，包含文字颜色）
+    showComponentEditModal(component, fieldValues, color, textColor);
 }
 
 /**
  * 显示编辑弹窗（复用预览弹窗结构，预填值）
  */
-function showComponentEditModal(component, fieldValues, color) {
+function showComponentEditModal(component, fieldValues, color, textColor) {
     currentColor = color;
+    currentTextColor = textColor || '';  // 恢复已保存的文字颜色
     
     // 创建弹窗
     let modal = document.querySelector('.component-preview-modal');
     if (!modal) {
         modal = createPreviewModal();
         document.body.appendChild(modal);
+    } else {
+        // 弹窗已存在，需要重新生成文字颜色选择器以更新 currentTextColor
+        const textColorWrapper = modal.querySelector('.text-color-picker-wrapper');
+        if (textColorWrapper) {
+            textColorWrapper.innerHTML = `
+                <label>文字颜色</label>
+                <div class="text-color-picker">
+                    ${TEXT_COLORS.map(c => `
+                        <span class="text-color-swatch ${c.color === '' ? 'default' : ''} ${c.color === currentTextColor ? 'active' : ''}" 
+                              data-color="${c.color}"
+                              style="${c.color ? 'background-color: ' + c.color + '; color: ' + c.color + ';' : ''}"
+                              title="${c.name}">
+                            ${c.color === '' ? '默认' : ''}
+                        </span>
+                    `).join('')}
+                    <input type="color" class="text-color-custom" value="${currentTextColor || '#333333'}" title="自定义颜色">
+                </div>
+            `;
+            // 重新绑定事件
+            bindTextColorEvents(modal);
+        }
     }
     
     // 填充标题
@@ -2143,13 +2275,19 @@ function updateComponent() {
         const processedValues = processFieldValues(fields, fieldValues);
         
         // 生成新HTML
-        const html = currentPreviewComponent.getHtml(currentColor, processedValues);
+        let html = currentPreviewComponent.getHtml(currentColor, processedValues);
+        
+        // 应用文字颜色
+        if (currentTextColor) {
+            html = applyTextColorToHtml(html, currentTextColor);
+        }
         
         // 就地更新组件DOM
         editingComponentElement.innerHTML = html;
         editingComponentElement.dataset.componentId = currentPreviewComponent.id;
         editingComponentElement.dataset.fieldValues = JSON.stringify(fieldValues);
         editingComponentElement.dataset.componentColor = currentColor;
+        editingComponentElement.dataset.textColor = currentTextColor || '';  // 保存文字颜色
         
         // 同步预览
         syncToPreview();
@@ -2161,6 +2299,8 @@ function updateComponent() {
     }
     
     editingComponentElement = null;
+    // 重置文字颜色
+    currentTextColor = '';
 }
 
 // ==================== 工具函数 ====================
