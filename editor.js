@@ -542,88 +542,31 @@ function convertToWechatHTML() {
     // 应用当前模板样式
     html = applyTemplateStyles(html, currentTemplate);
     
-    // 用section包裹内容（微信会过滤div）
-    html = wrapWithSection(html);
-    
-    // 处理容器样式（只处理section和其直接子元素）
-    html = wrapContainerStyles(html);
-    
     // 处理图片样式
     html = processImagesForWechat(html);
     
     // 清理不必要的标签和属性
     html = cleanForWechat(html);
     
-    return html;
-}
-
-/**
- * 用section标签包裹内容
- * @param {string} html - HTML内容
- * @returns {string} 包裹后的HTML
- */
-function wrapWithSection(html) {
-    // 先提取已有section内容
-    const sectionMatch = html.match(/<section[^>]*>([\s\S]*)<\/section>/i);
-    if (sectionMatch && !html.includes('<section') && !html.includes('</section>')) {
-        // 如果还没有section包裹，则包裹
-        const styles = getTemplateStyles(currentTemplate);
-        const containerStyle = styles.container.replace(/"/g, "'");
-        
-        // 添加背景色
-        const bgStyle = `background-color: ${currentBgColor};`;
-        const combinedStyle = bgStyle + containerStyle;
-        
-        return `<section style="${combinedStyle}">${html}</section>`;
-    }
-    return html;
-}
-
-/**
- * 处理容器的内联样式
- * @param {string} html - HTML内容
- * @returns {string} 处理后的HTML
- */
-function wrapContainerStyles(html) {
+    // 最后一步：包裹最外层容器，带背景色
     const styles = getTemplateStyles(currentTemplate);
-    const containerStyle = styles.container;
-    const isDark = isDarkColor(currentBgColor);
+    const containerStyle = styles.container.replace(/"/g, "'");
     
-    // 如果已经有section，添加容器样式和背景色
-    if (html.includes('<section')) {
-        html = html.replace(/<section([^>]*)>/i, (match, attrs) => {
-            // 如果section已有样式，合并
-            if (attrs.includes('style=')) {
-                // 在已有样式中添加背景色
-                return match.replace(/style="([^"]*)"/, (styleMatch, existingStyle) => {
-                    const bgStyle = `background-color: ${currentBgColor};`;
-                    // 深色背景时添加浅色文字
-                    let textColorStyle = '';
-                    if (isDark) {
-                        textColorStyle = 'color: #f5f5f5;';
-                    }
-                    return `style="${bgStyle}${textColorStyle}${existingStyle}"`;
-                });
-            }
-            // 添加背景色
-            const bgStyle = `background-color: ${currentBgColor};`;
-            let textColorStyle = '';
-            if (isDark) {
-                textColorStyle = 'color: #f5f5f5;';
-            }
-            return `<section${attrs} style="${bgStyle}${textColorStyle}${containerStyle}">`;
-        });
-        
-        // 如果section没有样式属性
-        if (!/<section[^>]*style=/i.test(html)) {
-            const bgStyle = `background-color: ${currentBgColor};`;
-            let textColorStyle = '';
-            if (isDark) {
-                textColorStyle = 'color: #f5f5f5;';
-            }
-            html = html.replace(/<section>/i, `<section style="${bgStyle}${textColorStyle}${containerStyle}">`);
+    // 构建背景色样式
+    let bgStyle = '';
+    let textColorStyle = '';
+    
+    // 非默认白色背景时添加背景色
+    if (currentBgColor !== '#ffffff') {
+        bgStyle = `background-color: ${currentBgColor};`;
+        // 深色背景时添加浅色文字
+        if (isDarkColor(currentBgColor)) {
+            textColorStyle = 'color: #f5f5f5;';
         }
     }
+    
+    // 用一个最外层 section 包裹所有内容
+    html = `<section style="${bgStyle}${textColorStyle}${containerStyle}">${html}</section>`;
     
     return html;
 }
