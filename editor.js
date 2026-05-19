@@ -983,13 +983,12 @@ function restoreAutoSave() {
 
 /**
  * 保存当前内容到草稿箱
+ * 优化：移除previewHtml，只保存必要字段
  * @param {string} name - 草稿名称
  */
 function saveToDraftBox(name) {
     try {
         const content = quill.root.innerHTML;
-        const previewContent = document.getElementById('preview-content');
-        const previewHtml = previewContent ? previewContent.innerHTML : '';
         
         // 不保存空白内容
         if (!quill.getText().trim()) {
@@ -1008,14 +1007,12 @@ function saveToDraftBox(name) {
             }
         }
         
-        // 生成新草稿
+        // 生成新草稿 - 只保存必要字段，减少存储占用
         const newDraft = {
             id: generateUUID(),
             name: name || formatDateTime(new Date()),
             content: content,
-            previewHtml: previewHtml,
             template: currentTemplate,
-            bgColor: currentBgColor,  // 保存背景色
             timestamp: Date.now()
         };
         
@@ -1024,6 +1021,14 @@ function saveToDraftBox(name) {
         // 保存到localStorage
         try {
             localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+            
+            // 背景色单独保存（草稿不需要重复存）
+            try {
+                localStorage.setItem(STORAGE_BG_COLOR_KEY, currentBgColor);
+            } catch (e) {
+                // 忽略
+            }
+            
             showToast(`「${newDraft.name}」已保存到草稿箱`, 'success');
             return true;
         } catch (e) {
