@@ -671,6 +671,9 @@ function initActionButtons() {
     
     // 复制HTML按钮
     document.getElementById('copy-html-btn').addEventListener('click', copyHTMLToClipboard);
+    
+    // 导入文章按钮
+    document.getElementById('import-article-btn').addEventListener('click', showImportArticleModal);
 }
 
 /**
@@ -2293,6 +2296,402 @@ function updateTime() {
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         timeEl.textContent = `${hours}:${minutes}`;
+    }
+}
+
+// ==================== 导入公众号文章功能 ====================
+
+/**
+ * CORS代理列表
+ */
+const CORS_PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?'
+];
+
+/**
+ * 显示导入文章弹窗
+ */
+function showImportArticleModal() {
+    // 创建弹窗
+    let modal = document.querySelector('.import-article-modal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    modal = document.createElement('div');
+    modal.className = 'import-modal-overlay';
+    modal.innerHTML = `
+        <div class="import-modal-content">
+            <div class="import-modal-header">
+                <h4>📥 导入公众号文章</h4>
+                <button class="import-modal-close">×</button>
+            </div>
+            
+            <!-- Tab切换 -->
+            <div class="import-tabs">
+                <button class="import-tab active" data-tab="auto">自动导入</button>
+                <button class="import-tab" data-tab="manual">手动导入</button>
+            </div>
+            
+            <!-- 自动导入面板 -->
+            <div class="import-panel active" id="auto-import-panel">
+                <div class="import-hint">
+                    <p>📌 请确保文章是公开可访问的微信公众号文章链接</p>
+                    <p class="import-hint-small">例如：https://mp.weixin.qq.com/s/xxxxx</p>
+                </div>
+                <div class="import-url-input-wrapper">
+                    <input type="text" id="import-url-input" placeholder="粘贴公众号文章链接" autocomplete="off">
+                </div>
+                <div class="import-actions">
+                    <button class="btn-import-cancel">取消</button>
+                    <button class="btn-import-start">开始导入</button>
+                </div>
+                <div class="import-loading" style="display: none;">
+                    <div class="import-spinner"></div>
+                    <span>正在抓取文章...</span>
+                </div>
+                <div class="import-error" style="display: none;"></div>
+            </div>
+            
+            <!-- 手动导入面板 -->
+            <div class="import-panel" id="manual-import-panel">
+                <div class="import-hint">
+                    <p>🔧 如果自动导入失败，可以使用手动方式：</p>
+                    <ol class="import-steps">
+                        <li>在浏览器中打开要导入的文章</li>
+                        <li>右键选择「查看网页源代码」或按 Ctrl+U</li>
+                        <li>全选复制所有内容（Ctrl+A → Ctrl+C）</li>
+                        <li>粘贴到下方文本框中</li>
+                    </ol>
+                </div>
+                <div class="import-source-wrapper">
+                    <textarea id="import-source-input" placeholder="在这里粘贴网页源代码..."></textarea>
+                </div>
+                <div class="import-actions">
+                    <button class="btn-import-cancel">取消</button>
+                    <button class="btn-import-manual">解析导入</button>
+                </div>
+                <div class="import-loading" style="display: none;">
+                    <div class="import-spinner"></div>
+                    <span>正在解析...</span>
+                </div>
+                <div class="import-error" style="display: none;"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 显示动画
+    requestAnimationFrame(() => {
+        modal.classList.add('show');
+    });
+    
+    // 关闭按钮
+    modal.querySelector('.import-modal-close').addEventListener('click', () => closeModal(modal));
+    modal.querySelectorAll('.btn-import-cancel').forEach(btn => {
+        btn.addEventListener('click', () => closeModal(modal));
+    });
+    
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal(modal);
+        }
+    });
+    
+    // Tab切换
+    modal.querySelectorAll('.import-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            modal.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+            modal.querySelectorAll('.import-panel').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            modal.querySelector(`#${tabName}-import-panel`).classList.add('active');
+        });
+    });
+    
+    // 自动导入按钮
+    modal.querySelector('.btn-import-start').addEventListener('click', () => {
+        const url = modal.querySelector('#import-url-input').value.trim();
+        if (!url) {
+            showImportError(modal, '请输入文章链接');
+            return;
+        }
+        if (!isWechatArticleUrl(url)) {
+            showImportError(modal, '请输入正确的公众号文章链接');
+            return;
+        }
+        importArticleFromUrl(url, modal);
+    });
+    
+    // 自动导入回车事件
+    modal.querySelector('#import-url-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const url = modal.querySelector('#import-url-input').value.trim();
+            if (url && isWechatArticleUrl(url)) {
+                importArticleFromUrl(url, modal);
+            }
+        }
+    });
+    
+    // 手动导入按钮
+    modal.querySelector('.btn-import-manual').addEventListener('click', () => {
+        const source = modal.querySelector('#import-source-input').value.trim();
+        if (!source) {
+            showImportError(modal, '请粘贴网页源代码');
+            return;
+        }
+        importArticleFromSource(source, modal);
+    });
+}
+
+/**
+ * 显示导入错误
+ */
+function showImportError(modal, message) {
+    const errorEl = modal.querySelector('.import-error');
+    const loadingEl = modal.querySelector('.import-loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+    }
+}
+
+/**
+ * 隐藏导入错误
+ */
+function hideImportError(modal) {
+    const errorEl = modal.querySelector('.import-error');
+    if (errorEl) errorEl.style.display = 'none';
+}
+
+/**
+ * 显示加载状态
+ */
+function showImportLoading(modal) {
+    const loadingEl = modal.querySelector('.import-loading');
+    if (loadingEl) {
+        loadingEl.style.display = 'flex';
+    }
+    hideImportError(modal);
+    // 禁用按钮
+    modal.querySelectorAll('.btn-import-start, .btn-import-manual').forEach(btn => {
+        btn.disabled = true;
+    });
+}
+
+/**
+ * 隐藏加载状态
+ */
+function hideImportLoading(modal) {
+    const loadingEl = modal.querySelector('.import-loading');
+    if (loadingEl) {
+        loadingEl.style.display = 'none';
+    }
+    // 启用按钮
+    modal.querySelectorAll('.btn-import-start, .btn-import-manual').forEach(btn => {
+        btn.disabled = false;
+    });
+}
+
+/**
+ * 检查是否为微信公众号文章链接
+ */
+function isWechatArticleUrl(url) {
+    return url.includes('mp.weixin.qq.com') && (url.includes('/s/') || url.includes('/news/'));
+}
+
+/**
+ * 从URL导入文章
+ */
+async function importArticleFromUrl(url, modal) {
+    showImportLoading(modal);
+    
+    let success = false;
+    let lastError = null;
+    
+    // 尝试使用多个CORS代理
+    for (const proxyBase of CORS_PROXIES) {
+        try {
+            const proxyUrl = proxyBase + encodeURIComponent(url);
+            const response = await fetch(proxyUrl, {
+                method: 'GET',
+                mode: 'cors'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const html = await response.text();
+            
+            if (html && html.length > 1000) {
+                const result = extractArticleContent(html);
+                if (result) {
+                    importArticleContent(result, modal);
+                    success = true;
+                    break;
+                }
+            }
+        } catch (error) {
+            lastError = error;
+            console.log(`代理 ${proxyBase} 失败:`, error);
+        }
+    }
+    
+    if (!success) {
+        // 所有代理都失败，提示使用手动导入
+        hideImportLoading(modal);
+        showImportError(modal, '自动抓取失败，请尝试手动导入方式');
+        
+        // 切换到手动导入Tab
+        setTimeout(() => {
+            modal.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+            modal.querySelectorAll('.import-panel').forEach(p => p.classList.remove('active'));
+            modal.querySelector('[data-tab="manual"]').classList.add('active');
+            modal.querySelector('#manual-import-panel').classList.add('active');
+        }, 1500);
+    }
+}
+
+/**
+ * 从源代码导入文章
+ */
+function importArticleFromSource(source, modal) {
+    showImportLoading(modal);
+    
+    try {
+        const result = extractArticleContent(source);
+        if (result) {
+            importArticleContent(result, modal);
+        } else {
+            hideImportLoading(modal);
+            showImportError(modal, '无法解析文章内容，请确认源代码是否正确');
+        }
+    } catch (error) {
+        hideImportLoading(modal);
+        showImportError(modal, '解析失败：' + error.message);
+    }
+}
+
+/**
+ * 提取文章内容
+ */
+function extractArticleContent(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // 查找正文内容容器
+    let contentEl = doc.querySelector('#js_content') || 
+                    doc.querySelector('.rich_media_content') ||
+                    doc.querySelector('[id="js_content"]');
+    
+    if (!contentEl) {
+        return null;
+    }
+    
+    // 获取正文HTML
+    let contentHtml = contentEl.innerHTML;
+    
+    // 处理懒加载图片：将 data-src 转为 src
+    contentHtml = contentHtml.replace(/data-src="([^"]+)"/g, (match, url) => {
+        return `src="${url}" data-src="${url}"`;
+    });
+    
+    // 处理 data-original 等其他懒加载属性
+    contentHtml = contentHtml.replace(/data-original="([^"]+)"/g, (match, url) => {
+        return `src="${url}" data-original="${url}"`;
+    });
+    
+    // 清理不需要的元素
+    contentHtml = cleanImportedContent(contentHtml);
+    
+    // 尝试获取标题
+    let title = '';
+    const titleEl = doc.querySelector('#activity-name') || 
+                    doc.querySelector('.rich_media_title h1') ||
+                    doc.querySelector('h1');
+    if (titleEl) {
+        title = titleEl.textContent.trim();
+    }
+    
+    return {
+        html: contentHtml,
+        title: title
+    };
+}
+
+/**
+ * 清理导入的内容
+ */
+function cleanImportedContent(html) {
+    // 移除script标签
+    html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    
+    // 移除style标签（微信的全局样式）
+    html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    
+    // 移除svg动画等
+    html = html.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '');
+    
+    // 移除微信交互元素（关注按钮、分享按钮等）
+    html = html.replace(/<div[^>]*class="[^"]*(?:follow|share|like|comment)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+    
+    // 移除data-src但src为空的img标签
+    html = html.replace(/<img([^>]*)src="[^"]*"/gi, (match, attrs) => {
+        if (attrs.includes('data-src') && !attrs.includes('src="http')) {
+            return '';
+        }
+        return match;
+    });
+    
+    // 移除fixed/absolute定位的元素（可能破坏布局）
+    html = html.replace(/style="[^"]*(?:position:\s*fixed|position:\s*absolute)[^"]*"/gi, '');
+    
+    // 移除无用的class属性（保留section等容器）
+    html = html.replace(/\sclass="[^"]*"/gi, (match) => {
+        // 保留section标签的class
+        if (match.includes('section')) {
+            return match;
+        }
+        return '';
+    });
+    
+    // 清理多余的空白
+    html = html.replace(/\s+/g, ' ');
+    html = html.replace(/>\s+</g, '><');
+    
+    return html.trim();
+}
+
+/**
+ * 将提取的内容导入编辑器
+ */
+function importArticleContent(result, modal) {
+    // 关闭弹窗
+    closeModal(modal);
+    
+    // 在编辑器末尾插入内容
+    const currentLength = quill.getLength();
+    
+    // 如果编辑器有内容，先添加换行
+    if (currentLength > 1) {
+        quill.insertText(currentLength - 1, '\n');
+    }
+    
+    // 使用clipboard API插入HTML
+    quill.clipboard.dangerouslyPasteHTML(currentLength - 1, result.html);
+    
+    // 更新预览
+    syncToPreview();
+    
+    // 显示成功提示
+    if (result.title) {
+        showToast(`「${result.title}」已导入`, 'success');
+    } else {
+        showToast('文章已导入成功', 'success');
     }
 }
 
