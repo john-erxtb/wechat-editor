@@ -41,11 +41,16 @@
                 <!-- 模板和背景色选择器（紧凑布局） -->
                 <div class="template-selector">
                     <div class="selector-row">
+                        <span class="selector-label">风格：</span>
                         <div class="template-list" id="template-list">
                             <!-- 模板项由JS动态生成 -->
                         </div>
+                        <div class="import-article-btn-wrapper">
+                            <button id="import-article-btn" class="btn-import-article" title="导入公众号文章">📥 导入公众号文章</button>
+                        </div>
                     </div>
                     <div class="selector-row">
+                        <span class="selector-label">背景色：</span>
                         <div class="bg-color-picker" id="bg-color-picker">
                             <!-- 背景色由JS动态生成 -->
                         </div>
@@ -207,11 +212,6 @@
                             <button class="btn-toolbar-draft" id="save-draft-btn" title="保存草稿">💾</button>
                             <button class="btn-toolbar-draft" id="draft-box-btn" title="草稿箱">📁</button>
                             <button class="btn-toolbar-draft" id="copy-html-btn" title="复制HTML">📋</button>
-                        </span>
-                        
-                        <!-- 导入文章按钮 -->
-                        <span class="ql-formats import-actions">
-                            <button class="btn-toolbar-draft" id="import-article-btn" title="导入公众号文章">📥</button>
                         </span>
                     </div>
                     

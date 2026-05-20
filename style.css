@@ -144,6 +144,39 @@ html, body {
     padding: 4px 0;
 }
 
+.selector-label {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+
+.import-article-btn-wrapper {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.btn-import-article {
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid #1a73e8;
+    background: #1a73e8;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-import-article:hover {
+    background: #1557b0;
+    border-color: #1557b0;
+}
+
 .template-list {
     display: flex;
     gap: 6px;
