@@ -1062,7 +1062,8 @@ function fallbackCopy(html) {
  * 清空编辑器
  */
 function clearEditor() {
-    if (quill.getText().trim() && !confirm('确定要清空所有内容吗？此操作将同时清除本地保存的草稿。')) {
+    const hasContent = quill.getText().trim() || quill.root.querySelector('.wechat-component, img');
+    if (hasContent && !confirm('确定要清空所有内容吗？此操作将同时清除本地保存的草稿。')) {
         return;
     }
     quill.setText('');
@@ -1126,8 +1127,9 @@ function autoSaveContent() {
         const previewContent = document.getElementById('preview-content');
         const previewHtml = previewContent ? previewContent.innerHTML : '';
         
-        // 不保存空白内容
-        if (!quill.getText().trim()) {
+        // 不保存空白内容（同时检查纯文本和组件内容，因为BlockEmbed组件不算文本）
+        const hasContent = quill.getText().trim() || quill.root.querySelector('.wechat-component, img');
+        if (!hasContent) {
             updateSaveStatus('saved');
             return;
         }
@@ -1201,8 +1203,9 @@ function saveToDraftBox(name) {
     try {
         const content = quill.root.innerHTML;
         
-        // 不保存空白内容
-        if (!quill.getText().trim()) {
+        // 不保存空白内容（同时检查纯文本和组件内容，因为BlockEmbed组件不算文本）
+        const hasContent = quill.getText().trim() || quill.root.querySelector('.wechat-component, img');
+        if (!hasContent) {
             showToast('编辑器内容为空，无法保存', 'error');
             return false;
         }
