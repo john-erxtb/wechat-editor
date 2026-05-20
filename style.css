@@ -1780,3 +1780,151 @@ html, body {
     padding-left: 12px;
     border-left: 1px solid #e0e0e0;
 }
+
+/* ========== 图片大小调整功能 ========== */
+/* 图片编辑模式容器 */
+.image-edit-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+
+/* 调整手柄 - 四角 */
+.image-resize-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #1a73e8;
+    border: 2px solid white;
+    border-radius: 2px;
+    z-index: 100;
+    cursor: pointer;
+}
+
+/* 四角手柄 */
+.image-resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+.image-resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+.image-resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+.image-resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+/* 四边中点手柄 */
+.image-resize-handle.n { top: -6px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.image-resize-handle.s { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.image-resize-handle.e { right: -6px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+.image-resize-handle.w { left: -6px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+
+/* 手柄悬停效果 */
+.image-resize-handle:hover {
+    background: #1557b0;
+}
+.image-resize-handle.n:hover, .image-resize-handle.s:hover { transform: translateX(-50%) scale(1.2); }
+.image-resize-handle.e:hover, .image-resize-handle.w:hover { transform: translateY(-50%) scale(1.2); }
+
+/* 图片选中边框 */
+.image-edit-container.selected img {
+    outline: 2px solid #1a73e8;
+    outline-offset: 4px;
+}
+
+/* 图片工具条 */
+.image-size-toolbar {
+    position: absolute;
+    top: -48px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 101;
+    white-space: nowrap;
+}
+
+.image-size-toolbar::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid white;
+}
+
+/* 尺寸预设按钮 */
+.size-preset-btn {
+    padding: 4px 8px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #333;
+}
+
+.size-preset-btn:hover {
+    background: #f0f0f0;
+    border-color: #1a73e8;
+}
+
+.size-preset-btn.active {
+    background: #1a73e8;
+    color: white;
+    border-color: #1a73e8;
+}
+
+/* 自定义宽度输入 */
+.size-custom-input {
+    width: 50px;
+    padding: 4px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.size-custom-input:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+/* 删除图片按钮 */
+.image-delete-btn {
+    padding: 4px 8px;
+    border: 1px solid #ff4444;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #ff4444;
+    transition: all 0.2s;
+}
+
+.image-delete-btn:hover {
+    background: #ff4444;
+    color: white;
+}
+
+/* ESC提示 */
+.image-edit-hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.image-edit-hint.show {
+    opacity: 1;
+}

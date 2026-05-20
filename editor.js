@@ -204,6 +204,378 @@ function initQuillEditor() {
 
     // 设置初始内容示例
     setInitialContent();
+    
+    // 【修复问题二】初始化图片点击调整功能
+    initImageResizeFeature();
+}
+
+/**
+ * 初始化图片点击调整功能
+ */
+function initImageResizeFeature() {
+    // ESC键退出图片编辑模式
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            exitImageEditMode();
+        }
+    });
+    
+    // 点击其他地方退出图片编辑模式
+    document.addEventListener('mousedown', function(e) {
+        const container = e.target.closest('.image-edit-container');
+        const toolbar = e.target.closest('.image-size-toolbar');
+        if (!container && !toolbar) {
+            exitImageEditMode();
+        }
+    });
+    
+    // 预览区图片点击处理
+    const previewContent = document.querySelector('.preview-content');
+    if (previewContent) {
+        previewContent.addEventListener('click', function(e) {
+            const img = e.target.closest('img');
+            if (img) {
+                e.preventDefault();
+                e.stopPropagation();
+                enterImageEditMode(img);
+            }
+        });
+    }
+}
+
+/**
+ * 进入图片编辑模式
+ */
+function enterImageEditMode(img) {
+    // 退出之前的编辑模式
+    exitImageEditMode();
+    
+    // 获取图片所在的容器
+    let container = img.parentElement;
+    if (container.classList.contains('image-edit-container')) {
+        // 已经在编辑容器中
+    } else {
+        // 创建编辑容器
+        const editContainer = document.createElement('div');
+        editContainer.className = 'image-edit-container';
+        img.parentNode.insertBefore(editContainer, img);
+        editContainer.appendChild(img);
+        container = editContainer;
+    }
+    
+    // 添加选中样式
+    container.classList.add('selected');
+    
+    // 创建调整手柄
+    createResizeHandles(container, img);
+    
+    // 创建工具条
+    createImageToolbar(container, img);
+    
+    // 显示ESC提示
+    showImageEditHint();
+}
+
+/**
+ * 退出图片编辑模式
+ */
+function exitImageEditMode() {
+    // 移除所有编辑容器
+    document.querySelectorAll('.image-edit-container').forEach(container => {
+        const img = container.querySelector('img');
+        if (img && container.parentNode) {
+            container.parentNode.insertBefore(img, container);
+            container.remove();
+        }
+    });
+    
+    // 隐藏ESC提示
+    hideImageEditHint();
+}
+
+/**
+ * 创建调整手柄
+ */
+function createResizeHandles(container, img) {
+    const handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+    
+    handles.forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `image-resize-handle ${pos}`;
+        handle.dataset.position = pos;
+        
+        // 拖拽开始
+        handle.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            startResize(e, img, pos);
+        });
+        
+        container.appendChild(handle);
+    });
+}
+
+/**
+ * 开始拖拽调整大小
+ */
+function startResize(e, img, position) {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const originalWidth = img.offsetWidth;
+    const originalHeight = img.offsetHeight;
+    const containerWidth = img.parentElement.offsetWidth;
+    
+    // 获取当前尺寸
+    let currentWidth = originalWidth;
+    let currentHeight = originalHeight;
+    
+    // 获取图片的max-width百分比（用于计算基准宽度）
+    const style = window.getComputedStyle(img);
+    const maxWidth = style.maxWidth;
+    let baseWidth = containerWidth;
+    
+    // 如果有max-width限制
+    if (maxWidth && maxWidth !== 'none' && maxWidth !== '0px') {
+        if (maxWidth.includes('%')) {
+            const percent = parseFloat(maxWidth) / 100;
+            baseWidth = containerWidth / percent;
+        } else {
+            baseWidth = parseFloat(maxWidth);
+        }
+    }
+    
+    function onMouseMove(e) {
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        // 计算宽高比
+        const ratio = originalWidth / originalHeight;
+        
+        let newWidth, newHeight;
+        
+        switch(position) {
+            case 'e':
+            case 'ne':
+            case 'se':
+                newWidth = originalWidth + deltaX;
+                break;
+            case 'w':
+            case 'nw':
+            case 'sw':
+                newWidth = originalWidth - deltaX;
+                break;
+            default:
+                newWidth = originalWidth;
+        }
+        
+        // 保持比例
+        newHeight = newWidth / ratio;
+        
+        // 限制最小尺寸
+        newWidth = Math.max(20, newWidth);
+        newHeight = Math.max(20, newHeight);
+        
+        // 限制最大尺寸不超过容器
+        const maxAllowedWidth = containerWidth;
+        if (newWidth > maxAllowedWidth) {
+            newWidth = maxAllowedWidth;
+            newHeight = newWidth / ratio;
+        }
+        
+        // 应用新尺寸
+        img.style.width = newWidth + 'px';
+        img.style.height = 'auto';
+        img.style.maxWidth = 'none';
+        
+        // 更新工具条中的百分比显示
+        updateToolbarPercent(img, containerWidth);
+    }
+    
+    function onMouseUp() {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        syncToPreview();
+    }
+    
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+}
+
+/**
+ * 创建图片工具条
+ */
+function createImageToolbar(container, img) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'image-size-toolbar';
+    
+    const containerWidth = container.offsetWidth || container.parentElement.offsetWidth;
+    const currentPercent = Math.round((img.offsetWidth / containerWidth) * 100);
+    
+    // 预设按钮
+    const presets = [
+        { label: '25%', value: 25 },
+        { label: '50%', value: 50 },
+        { label: '75%', value: 75 },
+        { label: '100%', value: 100 }
+    ];
+    
+    presets.forEach(preset => {
+        const btn = document.createElement('button');
+        btn.className = 'size-preset-btn' + (currentPercent === preset.value ? ' active' : '');
+        btn.textContent = preset.label;
+        btn.dataset.percent = preset.value;
+        
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            setImageWidthPercent(img, container, preset.value);
+            updateToolbarActive(toolbar, preset.value);
+        });
+        
+        toolbar.appendChild(btn);
+    });
+    
+    // 自定义宽度输入
+    const inputWrapper = document.createElement('div');
+    inputWrapper.style.display = 'flex';
+    inputWrapper.style.alignItems = 'center';
+    inputWrapper.style.gap = '4px';
+    
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'size-custom-input';
+    input.value = currentPercent;
+    input.min = 10;
+    input.max = 200;
+    input.placeholder = '%';
+    
+    const unitLabel = document.createElement('span');
+    unitLabel.textContent = '%';
+    unitLabel.style.fontSize = '12px';
+    unitLabel.style.color = '#666';
+    
+    input.addEventListener('change', function(e) {
+        e.stopPropagation();
+        const percent = parseInt(input.value) || 100;
+        setImageWidthPercent(img, container, percent);
+        updateToolbarActive(toolbar, percent);
+    });
+    
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    input.addEventListener('keydown', function(e) {
+        e.stopPropagation();
+    });
+    
+    inputWrapper.appendChild(input);
+    inputWrapper.appendChild(unitLabel);
+    toolbar.appendChild(inputWrapper);
+    
+    // 删除按钮
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'image-delete-btn';
+    deleteBtn.textContent = '🗑';
+    deleteBtn.title = '删除图片';
+    deleteBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        deleteSelectedImage(img);
+    });
+    
+    toolbar.appendChild(deleteBtn);
+    container.appendChild(toolbar);
+}
+
+/**
+ * 设置图片宽度百分比
+ */
+function setImageWidthPercent(img, container, percent) {
+    const containerWidth = container.offsetWidth || container.parentElement.offsetWidth;
+    const newWidth = containerWidth * (percent / 100);
+    
+    img.style.width = newWidth + 'px';
+    img.style.height = 'auto';
+    img.style.maxWidth = 'none';
+    
+    // 更新输入框
+    const input = document.querySelector('.image-size-toolbar .size-custom-input');
+    if (input) {
+        input.value = percent;
+    }
+    
+    syncToPreview();
+}
+
+/**
+ * 更新工具条活动状态
+ */
+function updateToolbarActive(toolbar, currentPercent) {
+    toolbar.querySelectorAll('.size-preset-btn').forEach(btn => {
+        const presetPercent = parseInt(btn.dataset.percent);
+        btn.classList.toggle('active', presetPercent === currentPercent);
+    });
+    
+    const input = toolbar.querySelector('.size-custom-input');
+    if (input) {
+        input.value = currentPercent;
+    }
+}
+
+/**
+ * 更新工具条中的百分比显示
+ */
+function updateToolbarPercent(img, containerWidth) {
+    const toolbar = document.querySelector('.image-size-toolbar');
+    if (!toolbar) return;
+    
+    const currentPercent = Math.round((img.offsetWidth / containerWidth) * 100);
+    updateToolbarActive(toolbar, currentPercent);
+}
+
+/**
+ * 删除选中的图片
+ */
+function deleteSelectedImage(img) {
+    // 从DOM中移除
+    const container = img.parentElement;
+    if (container.classList.contains('image-edit-container')) {
+        container.remove();
+    } else {
+        img.remove();
+    }
+    
+    exitImageEditMode();
+    syncToPreview();
+    showToast('图片已删除', 'success');
+}
+
+/**
+ * 显示ESC提示
+ */
+function showImageEditHint() {
+    let hint = document.querySelector('.image-edit-hint');
+    if (!hint) {
+        hint = document.createElement('div');
+        hint.className = 'image-edit-hint';
+        hint.textContent = '按 ESC 退出图片编辑模式';
+        document.body.appendChild(hint);
+    }
+    hint.classList.add('show');
+    
+    // 3秒后自动隐藏
+    setTimeout(() => {
+        hint.classList.remove('show');
+    }, 3000);
+}
+
+/**
+ * 隐藏ESC提示
+ */
+function hideImageEditHint() {
+    const hint = document.querySelector('.image-edit-hint');
+    if (hint) {
+        hint.classList.remove('show');
+    }
 }
 
 /**
@@ -2577,6 +2949,56 @@ function importArticleFromSource(source, modal) {
 }
 
 /**
+ * CSS 样式内联化函数
+ * 将 <style> 标签中的 CSS 类样式应用到对应元素的内联 style 上
+ * @param {Document} doc - DOM文档对象
+ * @returns {Document} 处理后的文档对象
+ */
+function inlineCssStyles(doc) {
+    // 获取所有style标签中的CSS规则
+    const styleSheets = doc.querySelectorAll('style');
+    const cssRules = [];
+    
+    styleSheets.forEach(sheet => {
+        try {
+            // 解析CSS文本
+            const text = sheet.textContent;
+            // 简单解析CSS规则：选择器 { 属性: 值; ... }
+            const ruleRegex = /([^{}]+)\{([^{}]+)\}/g;
+            let match;
+            while ((match = ruleRegex.exec(text)) !== null) {
+                const selector = match[1].trim();
+                const properties = match[2].trim();
+                // 只处理简单的类选择器、ID选择器和标签选择器
+                if (selector.startsWith('.') || selector.startsWith('#') || /^[a-z][a-z0-9]*$/i.test(selector)) {
+                    cssRules.push({ selector, properties });
+                }
+            }
+        } catch(e) {
+            console.log('解析CSS样式失败:', e);
+        }
+    });
+    
+    // 将CSS规则应用到元素上
+    cssRules.forEach(({ selector, properties }) => {
+        try {
+            const elements = doc.querySelectorAll(selector);
+            elements.forEach(el => {
+                const existingStyle = el.getAttribute('style') || '';
+                // 避免重复添加相同属性
+                if (!existingStyle.includes(properties.split(':')[0].trim())) {
+                    el.setAttribute('style', existingStyle + properties + ';');
+                }
+            });
+        } catch(e) {
+            // 忽略无效的选择器
+        }
+    });
+    
+    return doc;
+}
+
+/**
  * 提取文章内容
  */
 function extractArticleContent(html) {
@@ -2591,6 +3013,9 @@ function extractArticleContent(html) {
     if (!contentEl) {
         return null;
     }
+    
+    // 【修复问题一】在移除 <style> 标签之前，先将 CSS 类样式内联化
+    inlineCssStyles(doc);
     
     // 获取正文HTML
     let contentHtml = contentEl.innerHTML;
@@ -2608,18 +3033,22 @@ function extractArticleContent(html) {
     // 清理不需要的元素
     contentHtml = cleanImportedContent(contentHtml);
     
-    // 尝试获取标题
+    // 【修复问题一】保留标题的HTML结构（不只是纯文本）
     let title = '';
+    let titleHtml = '';
     const titleEl = doc.querySelector('#activity-name') || 
                     doc.querySelector('.rich_media_title h1') ||
                     doc.querySelector('h1');
     if (titleEl) {
         title = titleEl.textContent.trim();
+        // 获取标题的 outerHTML 以保留样式
+        titleHtml = titleEl.outerHTML;
     }
     
     return {
         html: contentHtml,
-        title: title
+        title: title,
+        titleHtml: titleHtml
     };
 }
 
@@ -2630,7 +3059,7 @@ function cleanImportedContent(html) {
     // 移除script标签
     html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     
-    // 移除style标签（微信的全局样式）
+    // 移除style标签（微信的全局样式）- 注意：CSS类样式已在 inlineCssStyles 中内联化
     html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     
     // 移除svg动画等
@@ -2644,6 +3073,34 @@ function cleanImportedContent(html) {
         if (attrs.includes('data-src') && !attrs.includes('src="http')) {
             return '';
         }
+        return match;
+    });
+    
+    // 【修复问题二】正确处理图片尺寸：保留已有尺寸信息
+    html = html.replace(/<img([^>]*)>/gi, (match, attrs) => {
+        // 检查图片是否已有明确的宽度或高度设置
+        const hasWidth = /(^|\s)width\s*:/i.test(attrs) || /(^|\s)width\s*=/i.test(attrs);
+        const hasHeight = /(^|\s)height\s*:/i.test(attrs) || /(^|\s)height\s*=/i.test(attrs);
+        const hasWidthAttr = /\swidth\s*=\s*["']?\d/i.test(attrs);
+        const hasHeightAttr = /\sheight\s*=\s*["']?\d/i.test(attrs);
+        
+        // 如果已有明确的尺寸设置，保留原样（除非是强制设置100%）
+        if ((hasWidth || hasWidthAttr) && !attrs.includes('max-width: 100%') && !attrs.includes('max-width:100%')) {
+            return match;
+        }
+        
+        // 如果没有明确的尺寸设置，添加默认的响应式样式
+        if (!hasWidth && !hasWidthAttr) {
+            // 检查是否已有style属性
+            if (attrs.includes('style=')) {
+                // 追加样式
+                return match.replace(/style="([^"]*)"/, 'style="$1max-width: 100%; height: auto;"');
+            } else {
+                // 添加style属性
+                return `<img${attrs} style="max-width: 100%; height: auto;">`;
+            }
+        }
+        
         return match;
     });
     
