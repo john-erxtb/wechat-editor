@@ -1928,3 +1928,84 @@ html, body {
 .image-edit-hint.show {
     opacity: 1;
 }
+
+/* ========== 编辑器区图片大小调整功能 ========== */
+/* 【修复问题二】编辑器图片工具条 */
+.editor-image-toolbar {
+    position: absolute;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 100;
+    white-space: nowrap;
+}
+
+/* 编辑器尺寸预设按钮 */
+.editor-size-btn {
+    padding: 4px 8px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #333;
+}
+
+.editor-size-btn:hover {
+    background: #f0f0f0;
+    border-color: #667eea;
+}
+
+.editor-size-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+/* 编辑器自定义宽度输入 */
+.editor-size-input-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.editor-size-input {
+    width: 50px;
+    padding: 4px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.editor-size-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* 编辑器删除图片按钮 */
+.editor-image-delete-btn {
+    padding: 4px 8px;
+    border: 1px solid #ff4444;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #ff4444;
+    transition: all 0.2s;
+}
+
+.editor-image-delete-btn:hover {
+    background: #ff4444;
+    color: white;
+}
+
+/* 预览区图片选中效果（简化版，不提供调整功能） */
+.preview-image-selected {
+    outline: 2px dashed #667eea;
+    outline-offset: 4px;
+}

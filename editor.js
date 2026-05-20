@@ -205,211 +205,67 @@ function initQuillEditor() {
     // 设置初始内容示例
     setInitialContent();
     
-    // 【修复问题二】初始化图片点击调整功能
-    initImageResizeFeature();
+    // 【修复问题二】初始化编辑器区图片大小调整功能
+    initEditorImageResize();
 }
 
 /**
- * 初始化图片点击调整功能
+ * 初始化编辑器区图片大小调整功能
+ * 【修复问题二】点击编辑器中的图片弹出大小调整工具条
  */
-function initImageResizeFeature() {
+function initEditorImageResize() {
+    const editorEl = quill.root;
+    let activeToolbar = null;
+    
     // ESC键退出图片编辑模式
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            exitImageEditMode();
+        if (e.key === 'Escape' && activeToolbar) {
+            removeEditorImageToolbar();
         }
     });
     
     // 点击其他地方退出图片编辑模式
     document.addEventListener('mousedown', function(e) {
-        const container = e.target.closest('.image-edit-container');
-        const toolbar = e.target.closest('.image-size-toolbar');
-        if (!container && !toolbar) {
-            exitImageEditMode();
+        if (activeToolbar && !activeToolbar.contains(e.target) && !e.target.closest('.editor-image-toolbar')) {
+            removeEditorImageToolbar();
         }
     });
     
-    // 预览区图片点击处理
-    const previewContent = document.querySelector('.preview-content');
-    if (previewContent) {
-        previewContent.addEventListener('click', function(e) {
-            const img = e.target.closest('img');
-            if (img) {
-                e.preventDefault();
-                e.stopPropagation();
-                enterImageEditMode(img);
-            }
-        });
-    }
-}
-
-/**
- * 进入图片编辑模式
- */
-function enterImageEditMode(img) {
-    // 退出之前的编辑模式
-    exitImageEditMode();
-    
-    // 获取图片所在的容器
-    let container = img.parentElement;
-    if (container.classList.contains('image-edit-container')) {
-        // 已经在编辑容器中
-    } else {
-        // 创建编辑容器
-        const editContainer = document.createElement('div');
-        editContainer.className = 'image-edit-container';
-        img.parentNode.insertBefore(editContainer, img);
-        editContainer.appendChild(img);
-        container = editContainer;
-    }
-    
-    // 添加选中样式
-    container.classList.add('selected');
-    
-    // 创建调整手柄
-    createResizeHandles(container, img);
-    
-    // 创建工具条
-    createImageToolbar(container, img);
-    
-    // 显示ESC提示
-    showImageEditHint();
-}
-
-/**
- * 退出图片编辑模式
- */
-function exitImageEditMode() {
-    // 移除所有编辑容器
-    document.querySelectorAll('.image-edit-container').forEach(container => {
-        const img = container.querySelector('img');
-        if (img && container.parentNode) {
-            container.parentNode.insertBefore(img, container);
-            container.remove();
+    // 点击编辑器中的图片
+    editorEl.addEventListener('click', function(e) {
+        const img = e.target.closest('img');
+        if (!img) {
+            removeEditorImageToolbar();
+            return;
         }
-    });
-    
-    // 隐藏ESC提示
-    hideImageEditHint();
-}
-
-/**
- * 创建调整手柄
- */
-function createResizeHandles(container, img) {
-    const handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
-    
-    handles.forEach(pos => {
-        const handle = document.createElement('div');
-        handle.className = `image-resize-handle ${pos}`;
-        handle.dataset.position = pos;
         
-        // 拖拽开始
-        handle.addEventListener('mousedown', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            startResize(e, img, pos);
-        });
+        e.preventDefault();
+        e.stopPropagation();
         
-        container.appendChild(handle);
+        // 移除之前的工具条
+        removeEditorImageToolbar();
+        
+        // 创建图片工具条
+        const toolbar = createEditorImageToolbar(img);
+        
+        // 定位到图片下方
+        positionEditorImageToolbar(img, toolbar);
+        
+        editorEl.appendChild(toolbar);
+        activeToolbar = toolbar;
+        
+        // 监听滚动和resize以更新工具条位置
+        const updatePosition = () => positionEditorImageToolbar(img, toolbar);
+        img._updateToolbarPosition = updatePosition;
     });
 }
 
 /**
- * 开始拖拽调整大小
+ * 创建编辑器图片工具条
  */
-function startResize(e, img, position) {
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const originalWidth = img.offsetWidth;
-    const originalHeight = img.offsetHeight;
-    const containerWidth = img.parentElement.offsetWidth;
-    
-    // 获取当前尺寸
-    let currentWidth = originalWidth;
-    let currentHeight = originalHeight;
-    
-    // 获取图片的max-width百分比（用于计算基准宽度）
-    const style = window.getComputedStyle(img);
-    const maxWidth = style.maxWidth;
-    let baseWidth = containerWidth;
-    
-    // 如果有max-width限制
-    if (maxWidth && maxWidth !== 'none' && maxWidth !== '0px') {
-        if (maxWidth.includes('%')) {
-            const percent = parseFloat(maxWidth) / 100;
-            baseWidth = containerWidth / percent;
-        } else {
-            baseWidth = parseFloat(maxWidth);
-        }
-    }
-    
-    function onMouseMove(e) {
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-        
-        // 计算宽高比
-        const ratio = originalWidth / originalHeight;
-        
-        let newWidth, newHeight;
-        
-        switch(position) {
-            case 'e':
-            case 'ne':
-            case 'se':
-                newWidth = originalWidth + deltaX;
-                break;
-            case 'w':
-            case 'nw':
-            case 'sw':
-                newWidth = originalWidth - deltaX;
-                break;
-            default:
-                newWidth = originalWidth;
-        }
-        
-        // 保持比例
-        newHeight = newWidth / ratio;
-        
-        // 限制最小尺寸
-        newWidth = Math.max(20, newWidth);
-        newHeight = Math.max(20, newHeight);
-        
-        // 限制最大尺寸不超过容器
-        const maxAllowedWidth = containerWidth;
-        if (newWidth > maxAllowedWidth) {
-            newWidth = maxAllowedWidth;
-            newHeight = newWidth / ratio;
-        }
-        
-        // 应用新尺寸
-        img.style.width = newWidth + 'px';
-        img.style.height = 'auto';
-        img.style.maxWidth = 'none';
-        
-        // 更新工具条中的百分比显示
-        updateToolbarPercent(img, containerWidth);
-    }
-    
-    function onMouseUp() {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        syncToPreview();
-    }
-    
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-}
-
-/**
- * 创建图片工具条
- */
-function createImageToolbar(container, img) {
+function createEditorImageToolbar(img) {
     const toolbar = document.createElement('div');
-    toolbar.className = 'image-size-toolbar';
-    
-    const containerWidth = container.offsetWidth || container.parentElement.offsetWidth;
-    const currentPercent = Math.round((img.offsetWidth / containerWidth) * 100);
+    toolbar.className = 'editor-image-toolbar';
     
     // 预设按钮
     const presets = [
@@ -419,16 +275,26 @@ function createImageToolbar(container, img) {
         { label: '100%', value: 100 }
     ];
     
+    const container = img.parentElement;
+    const containerWidth = container.offsetWidth || 677;
+    const currentPercent = Math.round((img.offsetWidth / containerWidth) * 100);
+    
     presets.forEach(preset => {
         const btn = document.createElement('button');
-        btn.className = 'size-preset-btn' + (currentPercent === preset.value ? ' active' : '');
+        btn.className = 'editor-size-btn' + (Math.abs(currentPercent - preset.value) < 5 ? ' active' : '');
         btn.textContent = preset.label;
         btn.dataset.percent = preset.value;
         
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('mousedown', function(e) {
+            e.preventDefault();
             e.stopPropagation();
-            setImageWidthPercent(img, container, preset.value);
-            updateToolbarActive(toolbar, preset.value);
+        });
+        
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setEditorImageWidth(img, preset.value);
+            updateEditorToolbarActive(toolbar, preset.value);
         });
         
         toolbar.appendChild(btn);
@@ -436,146 +302,148 @@ function createImageToolbar(container, img) {
     
     // 自定义宽度输入
     const inputWrapper = document.createElement('div');
-    inputWrapper.style.display = 'flex';
-    inputWrapper.style.alignItems = 'center';
-    inputWrapper.style.gap = '4px';
+    inputWrapper.className = 'editor-size-input-wrapper';
     
     const input = document.createElement('input');
     input.type = 'number';
-    input.className = 'size-custom-input';
+    input.className = 'editor-size-input';
     input.value = currentPercent;
     input.min = 10;
     input.max = 200;
     input.placeholder = '%';
     
-    const unitLabel = document.createElement('span');
-    unitLabel.textContent = '%';
-    unitLabel.style.fontSize = '12px';
-    unitLabel.style.color = '#666';
-    
-    input.addEventListener('change', function(e) {
+    input.addEventListener('mousedown', function(e) {
+        e.preventDefault();
         e.stopPropagation();
-        const percent = parseInt(input.value) || 100;
-        setImageWidthPercent(img, container, percent);
-        updateToolbarActive(toolbar, percent);
     });
     
     input.addEventListener('click', function(e) {
         e.stopPropagation();
     });
     
-    input.addEventListener('keydown', function(e) {
+    input.addEventListener('change', function(e) {
+        e.preventDefault();
         e.stopPropagation();
+        const percent = parseInt(input.value) || 100;
+        setEditorImageWidth(img, percent);
+        updateEditorToolbarActive(toolbar, percent);
     });
     
     inputWrapper.appendChild(input);
-    inputWrapper.appendChild(unitLabel);
     toolbar.appendChild(inputWrapper);
     
     // 删除按钮
     const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'image-delete-btn';
+    deleteBtn.className = 'editor-image-delete-btn';
     deleteBtn.textContent = '🗑';
     deleteBtn.title = '删除图片';
-    deleteBtn.addEventListener('click', function(e) {
+    
+    deleteBtn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
         e.stopPropagation();
-        deleteSelectedImage(img);
+    });
+    
+    deleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteEditorImage(img);
     });
     
     toolbar.appendChild(deleteBtn);
-    container.appendChild(toolbar);
+    
+    return toolbar;
 }
 
 /**
- * 设置图片宽度百分比
+ * 定位编辑器图片工具条
  */
-function setImageWidthPercent(img, container, percent) {
-    const containerWidth = container.offsetWidth || container.parentElement.offsetWidth;
-    const newWidth = containerWidth * (percent / 100);
+function positionEditorImageToolbar(img, toolbar) {
+    const editorEl = quill.root;
+    const imgRect = img.getBoundingClientRect();
+    const editorRect = editorEl.getBoundingClientRect();
     
-    img.style.width = newWidth + 'px';
+    // 计算相对于编辑器的位置
+    const top = img.offsetTop + img.offsetHeight + 4;
+    const left = img.offsetLeft;
+    
+    toolbar.style.top = top + 'px';
+    toolbar.style.left = left + 'px';
+}
+
+/**
+ * 设置编辑器图片宽度
+ */
+function setEditorImageWidth(img, percent) {
+    img.style.width = percent + '%';
     img.style.height = 'auto';
     img.style.maxWidth = 'none';
     
-    // 更新输入框
-    const input = document.querySelector('.image-size-toolbar .size-custom-input');
-    if (input) {
-        input.value = percent;
-    }
-    
+    // 手动同步到预览区
     syncToPreview();
 }
 
 /**
- * 更新工具条活动状态
+ * 更新编辑器工具条活动状态
  */
-function updateToolbarActive(toolbar, currentPercent) {
-    toolbar.querySelectorAll('.size-preset-btn').forEach(btn => {
+function updateEditorToolbarActive(toolbar, currentPercent) {
+    toolbar.querySelectorAll('.editor-size-btn').forEach(btn => {
         const presetPercent = parseInt(btn.dataset.percent);
         btn.classList.toggle('active', presetPercent === currentPercent);
     });
     
-    const input = toolbar.querySelector('.size-custom-input');
+    const input = toolbar.querySelector('.editor-size-input');
     if (input) {
         input.value = currentPercent;
     }
 }
 
 /**
- * 更新工具条中的百分比显示
+ * 移除编辑器图片工具条
  */
-function updateToolbarPercent(img, containerWidth) {
-    const toolbar = document.querySelector('.image-size-toolbar');
-    if (!toolbar) return;
-    
-    const currentPercent = Math.round((img.offsetWidth / containerWidth) * 100);
-    updateToolbarActive(toolbar, currentPercent);
+function removeEditorImageToolbar() {
+    const existingToolbar = document.querySelector('.editor-image-toolbar');
+    if (existingToolbar) {
+        existingToolbar.remove();
+    }
 }
 
 /**
- * 删除选中的图片
+ * 删除编辑器中的图片
  */
-function deleteSelectedImage(img) {
-    // 从DOM中移除
-    const container = img.parentElement;
-    if (container.classList.contains('image-edit-container')) {
-        container.remove();
+function deleteEditorImage(img) {
+    // 使用Quill的API删除图片
+    const blot = Quill.find(img);
+    if (blot) {
+        blot.remove();
     } else {
+        // 备用方案：直接移除DOM元素
         img.remove();
     }
     
-    exitImageEditMode();
+    removeEditorImageToolbar();
     syncToPreview();
     showToast('图片已删除', 'success');
 }
 
 /**
- * 显示ESC提示
+ * 【保留】预览区图片点击处理（仅用于预览区查看效果，不做调整）
+ * 此函数保留但简化，仅用于预览区样式显示
  */
-function showImageEditHint() {
-    let hint = document.querySelector('.image-edit-hint');
-    if (!hint) {
-        hint = document.createElement('div');
-        hint.className = 'image-edit-hint';
-        hint.textContent = '按 ESC 退出图片编辑模式';
-        document.body.appendChild(hint);
-    }
-    hint.classList.add('show');
-    
-    // 3秒后自动隐藏
-    setTimeout(() => {
-        hint.classList.remove('show');
-    }, 3000);
+/**
+ * 进入图片编辑模式（预览区 - 保留但简化）
+ */
+function enterImageEditMode(img) {
+    // 预览区不再提供调整功能，只显示选中效果
+    img.classList.add('preview-image-selected');
 }
 
 /**
- * 隐藏ESC提示
+ * 退出图片编辑模式（预览区）
  */
-function hideImageEditHint() {
-    const hint = document.querySelector('.image-edit-hint');
-    if (hint) {
-        hint.classList.remove('show');
-    }
+function exitImageEditMode() {
+    document.querySelectorAll('.preview-image-selected').forEach(el => {
+        el.classList.remove('preview-image-selected');
+    });
 }
 
 /**
@@ -969,10 +837,14 @@ function processImagesForWechat(html) {
 
 /**
  * 清理微信不支持的标签和属性
+ * 【修复问题一】在导出时移除 style 标签和 class 属性，因为微信不支持
  * @param {string} html - HTML内容
  * @returns {string} 清理后的HTML
  */
 function cleanForWechat(html) {
+    // 【修复问题一】移除style标签（导出时才移除，让预览区能正确显示）
+    html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    
     // 移除Quill的自定义属性
     html = html.replace(/\sclass="ql-align-center"/g, ' style="text-align: center;"');
     html = html.replace(/\sclass="ql-align-right"/g, ' style="text-align: right;"');
@@ -1010,7 +882,13 @@ function cleanForWechat(html) {
     // 移除data-*属性
     html = html.replace(/\sdata-[a-z-]+="[^"]*"/gi, '');
     
-    // 移除class属性
+    // 【修复问题一】移除class属性（导出时才移除，保留section等重要类名用于内联化）
+    // 保留 section 标签的class用于内联化
+    html = html.replace(/<section\s+class="([^"]*)"([^>]*)>/gi, (match, cls, rest) => {
+        // 将section的class转为内联样式（部分保留）
+        return `<section${rest}>`;
+    });
+    // 移除其他所有class属性
     html = html.replace(/\sclass="[^"]*"/gi, '');
     
     // 移除空的style属性
@@ -3054,15 +2932,17 @@ function extractArticleContent(html) {
 
 /**
  * 清理导入的内容
+ * 【重要】保留 style 标签和 class 属性，让预览区能正确显示样式
+ * 导出时再进行CSS内联化和清理
  */
 function cleanImportedContent(html) {
-    // 移除script标签
+    // 移除script标签（安全性）
     html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     
-    // 移除style标签（微信的全局样式）- 注意：CSS类样式已在 inlineCssStyles 中内联化
-    html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    // 【修复问题一】不再移除style标签，保留导入文章的样式
+    // html = html.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
     
-    // 移除svg动画等
+    // 移除svg动画等（可能影响渲染）
     html = html.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '');
     
     // 移除微信交互元素（关注按钮、分享按钮等）
@@ -3084,7 +2964,7 @@ function cleanImportedContent(html) {
         const hasWidthAttr = /\swidth\s*=\s*["']?\d/i.test(attrs);
         const hasHeightAttr = /\sheight\s*=\s*["']?\d/i.test(attrs);
         
-        // 如果已有明确的尺寸设置，保留原样（除非是强制设置100%）
+        // 如果已有明确的尺寸设置，保留原样
         if ((hasWidth || hasWidthAttr) && !attrs.includes('max-width: 100%') && !attrs.includes('max-width:100%')) {
             return match;
         }
@@ -3104,17 +2984,13 @@ function cleanImportedContent(html) {
         return match;
     });
     
-    // 移除fixed/absolute定位的元素（可能破坏布局）
-    html = html.replace(/style="[^"]*(?:position:\s*fixed|position:\s*absolute)[^"]*"/gi, '');
-    
-    // 移除无用的class属性（保留section等容器）
-    html = html.replace(/\sclass="[^"]*"/gi, (match) => {
-        // 保留section标签的class
-        if (match.includes('section')) {
-            return match;
-        }
-        return '';
-    });
+    // 【修复问题一】不再移除class属性，保留样式引用
+    // html = html.replace(/\sclass="[^"]*"/gi, (match) => {
+    //     if (match.includes('section')) {
+    //         return match;
+    //     }
+    //     return '';
+    // });
     
     // 清理多余的空白
     html = html.replace(/\s+/g, ' ');
@@ -3125,21 +3001,24 @@ function cleanImportedContent(html) {
 
 /**
  * 将提取的内容导入编辑器
+ * 【修复问题一】使用 WechatComponentBlot 方式插入，避免 Quill 过滤样式
  */
 function importArticleContent(result, modal) {
     // 关闭弹窗
     closeModal(modal);
     
-    // 在编辑器末尾插入内容
-    const currentLength = quill.getLength();
+    // 【修复问题一】将文章HTML作为组件插入，避免 Quill 过滤样式
+    const componentValue = {
+        html: result.html,
+        componentId: 'imported-article',
+        fieldValues: {},
+        color: '#1a73e8'
+    };
     
-    // 如果编辑器有内容，先添加换行
-    if (currentLength > 1) {
-        quill.insertText(currentLength - 1, '\n');
-    }
-    
-    // 使用clipboard API插入HTML
-    quill.clipboard.dangerouslyPasteHTML(currentLength - 1, result.html);
+    // 在光标位置或编辑器末尾插入组件
+    const cursorPos = savedCursorPosition || quill.getLength() - 1;
+    quill.insertEmbed(cursorPos, 'wechat-component', componentValue, Quill.sources.USER);
+    quill.setSelection(cursorPos + 1, 0);
     
     // 更新预览
     syncToPreview();
