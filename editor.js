@@ -608,6 +608,7 @@ function applyTemplateStyles(html, templateId) {
 function processElements(container, styles) {
     // 处理h1（跳过组件内部的h1，保留用户对齐）
     container.querySelectorAll('h1').forEach(el => {
+        if (el.closest('.wechat-component')) return;  // 跳过组件内部
         const parentSection = el.closest('section[style]');
         if (parentSection) return;
         const savedAlign = el.style.textAlign;
@@ -617,6 +618,7 @@ function processElements(container, styles) {
     
     // 处理h2（跳过组件内部的h2，保留用户对齐）
     container.querySelectorAll('h2').forEach(el => {
+        if (el.closest('.wechat-component')) return;  // 跳过组件内部
         const parentSection = el.closest('section[style]');
         if (parentSection) return;
         const savedAlign = el.style.textAlign;
@@ -626,6 +628,7 @@ function processElements(container, styles) {
     
     // 处理h3（跳过组件内部的h3，保留用户对齐）
     container.querySelectorAll('h3').forEach(el => {
+        if (el.closest('.wechat-component')) return;  // 跳过组件内部
         const parentSection = el.closest('section[style]');
         if (parentSection) return;
         const savedAlign = el.style.textAlign;
@@ -635,6 +638,7 @@ function processElements(container, styles) {
     
     // 处理p标签（保留用户设置的对齐方式）
     container.querySelectorAll('p').forEach(el => {
+        if (el.closest('.wechat-component')) return;  // 跳过组件内部
         const parentSection = el.closest('section[style]');
         if (parentSection) {
             // 组件内部p：绝对不从模板覆盖text-align（应继承父section的对齐）
@@ -664,60 +668,71 @@ function processElements(container, styles) {
         }
     });
     
-    // 处理blockquote
+    // 处理blockquote（跳过组件内部）
     container.querySelectorAll('blockquote').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.blockquote);
         // 处理blockquote内的p
         el.querySelectorAll('p').forEach(p => {
-            applyInlineStyle(p, styles.p);
+            if (!p.closest('.wechat-component')) applyInlineStyle(p, styles.p);
         });
     });
     
-    // 处理hr
+    // 处理hr（跳过组件内部）
     container.querySelectorAll('hr').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.hr);
     });
     
-    // 处理列表
+    // 处理列表（跳过组件内部）
     container.querySelectorAll('ul').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.ul);
     });
     
     container.querySelectorAll('ol').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.ol);
     });
     
     container.querySelectorAll('li').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.li);
     });
     
-    // 处理a标签
+    // 处理a标签（跳过组件内部）
     container.querySelectorAll('a').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.a);
     });
     
-    // 处理strong标签
+    // 处理strong标签（跳过组件内部）
     container.querySelectorAll('strong, b').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.strong);
     });
     
-    // 处理em标签
+    // 处理em标签（跳过组件内部）
     container.querySelectorAll('em, i').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         el.style.fontStyle = 'italic';
     });
     
-    // 处理u标签（下划线）
+    // 处理u标签（下划线）（跳过组件内部）
     container.querySelectorAll('u').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         el.style.textDecoration = 'underline';
     });
     
-    // 处理s/strike标签（删除线）
+    // 处理s/strike标签（删除线）（跳过组件内部）
     container.querySelectorAll('s, strike').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         el.style.textDecoration = 'line-through';
     });
     
-    // 处理图片
+    // 处理图片（跳过组件内部，保留原始尺寸）
     container.querySelectorAll('img').forEach(el => {
+        if (el.closest('.wechat-component')) return;
         applyInlineStyle(el, styles.img);
         el.style.display = 'block';
     });
