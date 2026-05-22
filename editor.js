@@ -2901,10 +2901,22 @@ function extractArticleContent(html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    // 查找正文内容容器
+    // 查找正文内容容器（优先微信文章结构，兜底普通HTML）
     let contentEl = doc.querySelector('#js_content') || 
                     doc.querySelector('.rich_media_content') ||
                     doc.querySelector('[id="js_content"]');
+    
+    // 【兼容非微信HTML】找不到微信容器时，尝试从body中提取有意义的内容
+    if (!contentEl) {
+        const body = doc.body;
+        if (body) {
+            // 检查body里是否有section/div等实际内容
+            const hasContent = body.querySelector('section, div, p, h1, h2, h3, img, table');
+            if (hasContent) {
+                contentEl = body;
+            }
+        }
+    }
     
     if (!contentEl) {
         return null;
