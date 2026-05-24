@@ -820,14 +820,8 @@ function convertToWechatHTML() {
         }
     }
     
-    // 背景色和容器分层包裹：背景色用全宽外层section铺满，容器677px居中
-    if (currentBgColor !== '#ffffff') {
-        // 有背景色时：外层全宽铺背景色，内层677px容器
-        html = `<section style="${bgStyle}${textColorStyle}margin:0;padding:0;"><section style="${containerStyle}">${html}</section></section>`;
-    } else {
-        // 默认白色：只包一层容器
-        html = `<section style="${containerStyle}">${html}</section>`;
-    }
+    // 用一个最外层 section 包裹所有内容，带背景色
+    html = `<section style="${bgStyle}${textColorStyle}${containerStyle}">${html}</section>`;
     
     return html;
 }
