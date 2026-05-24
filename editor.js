@@ -820,11 +820,11 @@ function convertToWechatHTML() {
         }
     }
     
-    // 背景色和容器分层包裹：背景色用全宽外层section铺满，容器677px居中
-    // 这样背景色能铺满手机屏幕宽度，不会出现白边
+    // 背景色和容器分层包裹
+    // 微信#js_content自带约16px左右padding，必须用负margin抵消才能让背景色铺满屏幕
     if (currentBgColor !== '#ffffff') {
-        // 有背景色时：外层全宽铺背景色，内层677px容器
-        html = `<section style="${bgStyle}${textColorStyle}margin:0;padding:0;"><section style="${containerStyle}">${html}</section></section>`;
+        // 有背景色时：外层用负margin冲出微信padding铺满屏幕，内层677px容器
+        html = `<section style="${bgStyle}${textColorStyle}margin:0 -16px;padding:16px;box-sizing:border-box;"><section style="${containerStyle}">${html}</section></section>`;
     } else {
         // 默认白色：只包一层容器
         html = `<section style="${containerStyle}">${html}</section>`;
