@@ -2042,3 +2042,90 @@ html, body {
     outline: 2px dashed #667eea;
     outline-offset: 4px;
 }
+
+/* ========== 颜色字段选择器样式 ========== */
+.color-field-group {
+    margin-bottom: 14px;
+}
+
+.color-field-group label {
+    display: block;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.field-color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 10px;
+    background: #fafafa;
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+.field-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.field-color-swatch:hover {
+    transform: scale(1.15);
+    z-index: 1;
+}
+
+.field-color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #667eea;
+}
+
+.field-color-swatch.inherit {
+    background: linear-gradient(135deg, #e74c3c 0%, #2980b9 100%);
+}
+
+.field-color-custom {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 6px;
+    background: #fff;
+}
+
+.field-color-custom::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.field-color-custom::-webkit-color-swatch {
+    border-radius: 2px;
+    border: none;
+}
+
+/* 颜色字段容器 */
+.color-fields-container {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed #eee;
+}
+
+/* 颜色字段区域的预览标签 */
+.component-preview-body .component-input-area .preview-label:first-child {
+    display: none;
+}
+
+.component-preview-body .component-input-area .input-fields-container {
+    margin-bottom: 0;
+}

@@ -28,11 +28,15 @@ const COMPONENTS = {
                 icon: '🟧',
                 description: '带彩色背景的卡片',
                 getFields: () => [
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'bgColor', label: '卡片底色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="background-color: ${color}15; border-radius: 8px; padding: 20px; margin: 16px 0; border-left: 4px solid ${color};">
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="background-color: ${bgColor}15; border-radius: 8px; padding: 20px; margin: 16px 0; border-left: 4px solid ${color};">
 <p style="margin: 0; line-height: 1.8; color: #333333;">${fields.content || '在这里输入卡片内容...'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'card-dashed',
@@ -40,11 +44,15 @@ const COMPONENTS = {
                 icon: '〰️',
                 description: '虚线边框的卡片',
                 getFields: () => [
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'borderColor', label: '边框颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="background-color: #ffffff; border-radius: 4px; padding: 20px; margin: 16px 0; border: 2px dashed ${color};">
+                getHtml: (color, fields) => {
+                    const borderColor = fields.borderColor === 'inherit' ? color : fields.borderColor;
+                    return `<section style="background-color: #ffffff; border-radius: 4px; padding: 20px; margin: 16px 0; border: 2px dashed ${borderColor};">
 <p style="margin: 0; line-height: 1.8;">${fields.content || '在这里输入卡片内容...'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'card-left-bar',
@@ -52,11 +60,17 @@ const COMPONENTS = {
                 icon: '▌',
                 description: '左侧有彩色竖条的卡片',
                 getFields: () => [
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'barColor', label: '色条颜色', type: 'color', default: 'inherit' },
+                    { key: 'bgColor', label: '底色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="background-color: #ffffff; border-radius: 4px; padding: 20px; margin: 16px 0; border-left: 4px solid ${color}; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                getHtml: (color, fields) => {
+                    const barColor = fields.barColor === 'inherit' ? color : fields.barColor;
+                    const bgColor = fields.bgColor === 'inherit' ? '#ffffff' : fields.bgColor;
+                    return `<section style="background-color: ${bgColor}; border-radius: 4px; padding: 20px; margin: 16px 0; border-left: 4px solid ${barColor}; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
 <p style="margin: 0; line-height: 1.8;">${fields.content || '在这里输入卡片内容...'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'card-double-border',
@@ -64,11 +78,15 @@ const COMPONENTS = {
                 icon: '⬜',
                 description: '双线边框的卡片',
                 getFields: () => [
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'borderColor', label: '边框颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="background-color: #fafafa; padding: 20px; margin: 16px 0; border: 1px solid ${color}; border-radius: 4px; box-shadow: inset 0 0 0 3px #ffffff, inset 0 0 0 4px ${color};">
+                getHtml: (color, fields) => {
+                    const borderColor = fields.borderColor === 'inherit' ? color : fields.borderColor;
+                    return `<section style="background-color: #fafafa; padding: 20px; margin: 16px 0; border: 1px solid ${borderColor}; border-radius: 4px; box-shadow: inset 0 0 0 3px #ffffff, inset 0 0 0 4px ${borderColor};">
 <p style="margin: 0; line-height: 1.8;">${fields.content || '在这里输入卡片内容...'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'card-header',
@@ -77,16 +95,22 @@ const COMPONENTS = {
                 description: '顶部有标题栏的卡片',
                 getFields: () => [
                     { key: 'title', label: '卡片标题', type: 'text', default: '卡片标题' },
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'headerBgColor', label: '标题栏颜色', type: 'color', default: 'inherit' },
+                    { key: 'bodyBgColor', label: '内容区底色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="background-color: #ffffff; border-radius: 8px; margin: 16px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden;">
-<section style="background-color: ${color}; padding: 12px 20px;">
+                getHtml: (color, fields) => {
+                    const headerBgColor = fields.headerBgColor === 'inherit' ? color : fields.headerBgColor;
+                    const bodyBgColor = fields.bodyBgColor === 'inherit' ? '#ffffff' : fields.bodyBgColor;
+                    return `<section style="background-color: #ffffff; border-radius: 8px; margin: 16px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden;">
+<section style="background-color: ${headerBgColor}; padding: 12px 20px;">
 <p style="margin: 0; color: #ffffff; font-weight: 600; font-size: 16px;">${fields.title || '卡片标题'}</p>
 </section>
-<section style="padding: 20px;">
+<section style="background-color: ${bodyBgColor}; padding: 20px;">
 <p style="margin: 0; line-height: 1.8;">${fields.content || '在这里输入卡片内容...'}</p>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'card-gradient',
@@ -94,11 +118,15 @@ const COMPONENTS = {
                 icon: '🌈',
                 description: '渐变背景的卡片',
                 getFields: () => [
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'gradientStart', label: '渐变起始色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="background: linear-gradient(135deg, ${color}20 0%, ${color}05 100%); border-radius: 12px; padding: 24px; margin: 16px 0; border: 1px solid ${color}30;">
+                getHtml: (color, fields) => {
+                    const gradientColor = fields.gradientStart === 'inherit' ? color : fields.gradientStart;
+                    return `<section style="background: linear-gradient(135deg, ${gradientColor}20 0%, ${gradientColor}05 100%); border-radius: 12px; padding: 24px; margin: 16px 0; border: 1px solid ${gradientColor}30;">
 <p style="margin: 0; line-height: 1.8; color: #333333;">${fields.content || '在这里输入卡片内容...'}</p>
-</section>`
+</section>`;
+                }
             }
         ]
     },
@@ -114,13 +142,17 @@ const COMPONENTS = {
                 icon: '▎',
                 description: '左侧竖线装饰的标题',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'barColor', label: '竖线颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<section style="display: inline-block; border-left: 4px solid ${color}; padding-left: 12px;">
+                getHtml: (color, fields) => {
+                    const barColor = fields.barColor === 'inherit' ? color : fields.barColor;
+                    return `<section style="margin: 20px 0;">
+<section style="display: inline-block; border-left: 4px solid ${barColor}; padding-left: 12px;">
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'title-bottom-line',
@@ -128,12 +160,16 @@ const COMPONENTS = {
                 icon: '—',
                 description: '底部彩色线条装饰',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'lineColor', label: '底边线颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 20px 0;">
 <p style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
-<section style="width: 60px; height: 3px; background-color: ${color}; border-radius: 2px;"></section>
-</section>`
+<section style="width: 60px; height: 3px; background-color: ${lineColor}; border-radius: 2px;"></section>
+</section>`;
+                }
             },
             {
                 id: 'title-center-line',
@@ -141,15 +177,19 @@ const COMPONENTS = {
                 icon: '＝',
                 description: '—— 标题 —— 格式',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'lineColor', label: '装饰线颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 24px 0; text-align: center;">
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0; text-align: center;">
 <section style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-<section style="width: 40px; height: 1px; background-color: ${color};"></section>
+<section style="width: 40px; height: 1px; background-color: ${lineColor};"></section>
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
-<section style="width: 40px; height: 1px; background-color: ${color};"></section>
+<section style="width: 40px; height: 1px; background-color: ${lineColor};"></section>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'title-number-circle',
@@ -158,14 +198,18 @@ const COMPONENTS = {
                 description: '带数字圆圈的标题',
                 getFields: () => [
                     { key: 'number', label: '编号数字', type: 'text', default: '1' },
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'circleColor', label: '圆圈颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; display: flex; align-items: center; gap: 12px;">
-<section style="width: 36px; height: 36px; background-color: ${color}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                getHtml: (color, fields) => {
+                    const circleColor = fields.circleColor === 'inherit' ? color : fields.circleColor;
+                    return `<section style="margin: 20px 0; display: flex; align-items: center; gap: 12px;">
+<section style="width: 36px; height: 36px; background-color: ${circleColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
 <p style="margin: 0; color: #ffffff; font-weight: 700; font-size: 16px;">${fields.number || '1'}</p>
 </section>
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'title-icon',
@@ -185,11 +229,15 @@ const COMPONENTS = {
                 icon: '🖌',
                 description: '带背景色的标题',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '背景色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background-color: ${color}; padding: 10px 16px; border-radius: 4px; display: inline-block;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background-color: ${bgColor}; padding: 10px 16px; border-radius: 4px; display: inline-block;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-double-line',
@@ -197,13 +245,17 @@ const COMPONENTS = {
                 icon: '≡',
                 description: '上下双线夹标题',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'lineColor', label: '横线颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 24px 0; text-align: center;">
-<section style="height: 1px; background-color: ${color}; margin-bottom: 12px;"></section>
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0; text-align: center;">
+<section style="height: 1px; background-color: ${lineColor}; margin-bottom: 12px;"></section>
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; padding: 0 20px; display: inline-block;">${fields.title || '标题文字'}</p>
-<section style="height: 1px; background-color: ${color}; margin-top: 12px;"></section>
-</section>`
+<section style="height: 1px; background-color: ${lineColor}; margin-top: 12px;"></section>
+</section>`;
+                }
             },
             {
                 id: 'title-gradient',
@@ -211,11 +263,15 @@ const COMPONENTS = {
                 icon: '🌅',
                 description: '渐变背景标题',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'gradientStart', label: '渐变起始色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background: linear-gradient(90deg, ${color}, transparent); padding: 10px 20px; border-radius: 4px;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const gradientColor = fields.gradientStart === 'inherit' ? color : fields.gradientStart;
+                    return `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background: linear-gradient(90deg, ${gradientColor}, transparent); padding: 10px 20px; border-radius: 4px;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-left-right',
@@ -223,12 +279,16 @@ const COMPONENTS = {
                 icon: '⇿',
                 description: '标题在左，横线在右',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'lineColor', label: '横线颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; display: flex; align-items: center;">
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 20px 0; display: flex; align-items: center;">
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; flex-shrink: 0;">${fields.title || '标题文字'}</p>
-<section style="flex: 1; height: 2px; background: linear-gradient(to right, ${color}, transparent); margin-left: 16px;"></section>
-</section>`
+<section style="flex: 1; height: 2px; background: linear-gradient(to right, ${lineColor}, transparent); margin-left: 16px;"></section>
+</section>`;
+                }
             },
             // ========== 不规则底色标题组件 ==========
             {
@@ -237,11 +297,15 @@ const COMPONENTS = {
                 icon: '🖍',
                 description: '半透明荧光笔效果，像用荧光笔划过',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '荧光笔颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.5; background-color: ${color}40; padding: 6px 14px; border-radius: 4px; display: inline;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.5; background-color: ${bgColor}40; padding: 6px 14px; border-radius: 4px; display: inline;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-brush-round',
@@ -249,11 +313,15 @@ const COMPONENTS = {
                 icon: '🔲',
                 description: '四个角半径差异大的有机不规则色块',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '色块颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background-color: ${color}; padding: 12px 18px; border-radius: 4px 28px 6px 24px; display: inline-block;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4; background-color: ${bgColor}; padding: 12px 18px; border-radius: 4px 28px 6px 24px; display: inline-block;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-offset-bg',
@@ -261,14 +329,18 @@ const COMPONENTS = {
                 icon: '🎨',
                 description: '色块偏移的文字叠放效果，手绘感',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '底色色块颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<section style="background-color: ${color}; padding: 10px 16px; border-radius: 4px; display: inline-block; margin-left: 6px; margin-top: 4px;"></section>
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0;">
+<section style="background-color: ${bgColor}; padding: 10px 16px; border-radius: 4px; display: inline-block; margin-left: 6px; margin-top: 4px;"></section>
 <section style="margin-top: -44px; margin-left: 0;">
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'title-brush-dot',
@@ -276,13 +348,21 @@ const COMPONENTS = {
                 icon: '⭕',
                 description: '不规则色块配右上角装饰圆点',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '色块颜色', type: 'color', default: 'inherit' },
+                    { key: 'dotColor', label: '圆点颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; display: inline-block;">
-<section style="background-color: ${color}; padding: 12px 24px 12px 14px; border-radius: 4px 6px 6px 4px; display: inline-block;"></section>
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; margin-top: -46px; display: block;">${fields.title || '标题文字'}</p>
-<section style="width: 12px; height: 12px; background-color: #FFD700; border-radius: 50%; margin-left: auto; margin-top: -52px; margin-right: 8px;"></section>
-</section>`
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    const dotColor = fields.dotColor === 'inherit' ? '#FFD700' : fields.dotColor;
+                    return `<section style="margin: 20px 0; position: relative; display: inline-block;">
+<section style="background-color: ${bgColor}; padding: 12px 24px 12px 14px; border-radius: 4px 6px 6px 4px; display: inline-block;"></section>
+<section style="position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; background-color: ${dotColor}; border-radius: 50%;"></section>
+<section style="margin-top: -44px; margin-left: 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
+</section>
+</section>`;
+                }
             },
             {
                 id: 'title-brush-gradient',
@@ -290,11 +370,15 @@ const COMPONENTS = {
                 icon: '🌈',
                 description: '渐变底色模拟笔刷浓淡变化',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'gradientStart', label: '渐变起始色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background: linear-gradient(135deg, ${color} 0%, ${color}60 100%); padding: 10px 16px; border-radius: 4px 8px 12px 6px;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const gradientColor = fields.gradientStart === 'inherit' ? color : fields.gradientStart;
+                    return `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background: linear-gradient(135deg, ${gradientColor} 0%, ${gradientColor}60 100%); padding: 10px 16px; border-radius: 4px 8px 12px 6px;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-sticker',
@@ -302,11 +386,15 @@ const COMPONENTS = {
                 icon: '📌',
                 description: '微微倾斜的便利贴风格',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '贴纸颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; transform: rotate(-1deg); display: inline-block;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background-color: ${color}; padding: 12px 20px; border-radius: 2px;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0; transform: rotate(-1deg); display: inline-block;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background-color: ${bgColor}; padding: 12px 20px; border-radius: 2px;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-multi-bar',
@@ -314,14 +402,18 @@ const COMPONENTS = {
                 icon: '▤',
                 description: '多层色条叠加，手绘层次感',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '色条颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0;">
-<section style="background-color: ${color}60; padding: 8px 14px; border-radius: 4px; margin-left: 2px; margin-top: 2px; display: inline-block;"></section>
-<section style="background-color: ${color}; padding: 8px 14px; border-radius: 4px; display: inline-block; margin-left: -52px; margin-top: 0;">
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0;">
+<section style="background-color: ${bgColor}60; padding: 8px 14px; border-radius: 4px; margin-left: 2px; margin-top: 2px; display: inline-block;"></section>
+<section style="background-color: ${bgColor}; padding: 8px 14px; border-radius: 4px; display: inline-block; margin-left: -52px; margin-top: 0;">
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4;">${fields.title || '标题文字'}</p>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'title-slant-tag',
@@ -329,13 +421,17 @@ const COMPONENTS = {
                 icon: '🏷',
                 description: '一侧斜切角的手撕标签风格',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '标签颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; display: inline-flex;">
-<section style="background-color: ${color}; padding: 10px 16px; border-radius: 0 12px 12px 0; border-left: 16px solid transparent; box-shadow: -8px 0 0 0 ${color};">
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0; display: inline-flex;">
+<section style="background-color: ${bgColor}; padding: 10px 16px; border-radius: 0 12px 12px 0; border-left: 16px solid transparent; box-shadow: -8px 0 0 0 ${bgColor};">
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.4;">${fields.title || '标题文字'}</p>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'title-wide-band',
@@ -343,11 +439,15 @@ const COMPONENTS = {
                 icon: '➖',
                 description: '宽色带横贯，文字居中',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'bgColor', label: '色带颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; text-align: center;">
-<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background-color: ${color}30; padding: 14px 40px; border-radius: 6px 20px 20px 6px; display: inline-block;">${fields.title || '标题文字'}</p>
-</section>`
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? color : fields.bgColor;
+                    return `<section style="margin: 20px 0; text-align: center;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; background-color: ${bgColor}30; padding: 14px 40px; border-radius: 6px 20px 20px 6px; display: inline-block;">${fields.title || '标题文字'}</p>
+</section>`;
+                }
             },
             {
                 id: 'title-sketch-frame',
@@ -355,11 +455,15 @@ const COMPONENTS = {
                 icon: '✒',
                 description: '模拟手绘边框线的标题框',
                 getFields: () => [
-                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' }
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'borderColor', label: '边框颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 20px 0; padding: 12px 16px; border: 2px solid ${color}; border-radius: 8px; border-top-width: 3px; border-left-style: dashed; opacity: 0.85;">
+                getHtml: (color, fields) => {
+                    const borderColor = fields.borderColor === 'inherit' ? color : fields.borderColor;
+                    return `<section style="margin: 20px 0; padding: 12px 16px; border: 2px solid ${borderColor}; border-radius: 8px; border-top-width: 3px; border-left-style: dashed; opacity: 0.85;">
 <p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4;">${fields.title || '标题文字'}</p>
-</section>`
+</section>`;
+                }
             }
         ]
     },
@@ -374,44 +478,64 @@ const COMPONENTS = {
                 name: '细实线',
                 icon: '─',
                 description: '普通细实线',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0;">
-<section style="height: 1px; background-color: ${color}; opacity: 0.5;"></section>
-</section>`
+                getFields: () => [
+                    { key: 'lineColor', label: '线条颜色', type: 'color', default: 'inherit' }
+                ],
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0;">
+<section style="height: 1px; background-color: ${lineColor}; opacity: 0.5;"></section>
+</section>`;
+                }
             },
             {
                 id: 'divider-dashed',
                 name: '虚线',
                 icon: '┅',
                 description: '虚线分割',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0;">
-<section style="height: 1px; background: repeating-linear-gradient(to right, ${color} 0px, ${color} 6px, transparent 6px, transparent 10px);"></section>
-</section>`
+                getFields: () => [
+                    { key: 'lineColor', label: '线条颜色', type: 'color', default: 'inherit' }
+                ],
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0;">
+<section style="height: 1px; background: repeating-linear-gradient(to right, ${lineColor} 0px, ${lineColor} 6px, transparent 6px, transparent 10px);"></section>
+</section>`;
+                }
             },
             {
                 id: 'divider-gradient',
                 name: '渐变线',
                 icon: '梯度',
                 description: '透明-彩色-透明渐变线',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0;">
-<section style="height: 2px; background: linear-gradient(to right, transparent, ${color}, transparent); border-radius: 1px;"></section>
-</section>`
+                getFields: () => [
+                    { key: 'lineColor', label: '线条颜色', type: 'color', default: 'inherit' }
+                ],
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0;">
+<section style="height: 2px; background: linear-gradient(to right, transparent, ${lineColor}, transparent); border-radius: 1px;"></section>
+</section>`;
+                }
             },
             {
                 id: 'divider-icon',
                 name: '带图标分割线',
                 icon: '◆',
                 description: '中间带装饰符号',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0; text-align: center;">
+                getFields: () => [
+                    { key: 'lineColor', label: '线条颜色', type: 'color', default: 'inherit' }
+                ],
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0; text-align: center;">
 <section style="display: flex; align-items: center; justify-content: center; gap: 16px;">
-<section style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, ${color}50);"></section>
-<p style="margin: 0; color: ${color}; font-size: 14px;">◆</p>
-<section style="flex: 1; height: 1px; background: linear-gradient(to left, transparent, ${color}50);"></section>
+<section style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, ${lineColor}50);"></section>
+<p style="margin: 0; color: ${lineColor}; font-size: 14px;">◆</p>
+<section style="flex: 1; height: 1px; background: linear-gradient(to left, transparent, ${lineColor}50);"></section>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'divider-text',
@@ -419,26 +543,35 @@ const COMPONENTS = {
                 icon: '文字',
                 description: '—— 文字 —— 格式',
                 getFields: () => [
-                    { key: 'text', label: '分割线文字', type: 'text', default: '分割文字' }
+                    { key: 'text', label: '分割线文字', type: 'text', default: '分割文字' },
+                    { key: 'lineColor', label: '线条颜色', type: 'color', default: 'inherit' }
                 ],
-                getHtml: (color, fields) => `<section style="margin: 24px 0; text-align: center;">
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0; text-align: center;">
 <section style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-<section style="flex: 1; height: 1px; background-color: ${color}; opacity: 0.3;"></section>
-<p style="margin: 0; color: ${color}; font-size: 14px; opacity: 0.7;">${fields.text || '分割文字'}</p>
-<section style="flex: 1; height: 1px; background-color: ${color}; opacity: 0.3;"></section>
+<section style="flex: 1; height: 1px; background-color: ${lineColor}; opacity: 0.3;"></section>
+<p style="margin: 0; color: ${lineColor}; font-size: 14px; opacity: 0.7;">${fields.text || '分割文字'}</p>
+<section style="flex: 1; height: 1px; background-color: ${lineColor}; opacity: 0.3;"></section>
 </section>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'divider-double',
                 name: '双线分割线',
                 icon: '＝',
                 description: '双线分割',
-                getFields: () => [],
-                getHtml: (color) => `<section style="margin: 24px 0;">
-<section style="height: 1px; background-color: ${color}; opacity: 0.8; margin-bottom: 4px;"></section>
-<section style="height: 1px; background-color: ${color}; opacity: 0.4;"></section>
-</section>`
+                getFields: () => [
+                    { key: 'lineColor', label: '线条颜色', type: 'color', default: 'inherit' }
+                ],
+                getHtml: (color, fields) => {
+                    const lineColor = fields.lineColor === 'inherit' ? color : fields.lineColor;
+                    return `<section style="margin: 24px 0;">
+<section style="height: 1px; background-color: ${lineColor}; opacity: 0.8; margin-bottom: 4px;"></section>
+<section style="height: 1px; background-color: ${lineColor}; opacity: 0.4;"></section>
+</section>`;
+                }
             },
             {
                 id: 'divider-dot',
