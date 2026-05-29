@@ -12,15 +12,26 @@ const COMPONENTS = {
         items: [
             {
                 id: 'card-white-shadow',
-                name: '圆角白底卡片',
+                name: '圆角阴影卡片',
                 icon: '◻️',
-                description: '带阴影的白色圆角卡片',
+                description: '带阴影的圆角卡片，可调底色和阴影参数',
                 getFields: () => [
-                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' }
+                    { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
+                    { key: 'bgColor', label: '卡片底色', type: 'color', default: 'inherit' },
+                    { key: 'shadowDir', label: '阴影方向', type: 'select', default: '右下', options: ['右下','左下','左上','右上','四边'] },
+                    { key: 'shadowSize', label: '阴影大小', type: 'select', default: '中', options: ['小','中','大'] },
+                    { key: 'shadowStrength', label: '阴影强弱', type: 'select', default: '中', options: ['弱','中','强'] }
                 ],
-                getHtml: (color, fields) => `<section style="background-color: #ffffff; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
+                getHtml: (color, fields) => {
+                    const bgColor = fields.bgColor === 'inherit' ? '#ffffff' : fields.bgColor;
+                    const dir = fields.shadowDir || '右下';
+                    const size = fields.shadowSize || '中';
+                    const strength = fields.shadowStrength || '中';
+                    const shadowVal = buildBoxShadow(dir, size, strength, '0,0,0');
+                    return `<section style="background-color: ${bgColor}; border-radius: 8px; padding: 20px; margin: 16px 0; box-shadow: ${shadowVal}; border: 1px solid #f0f0f0;">
 <p style="margin: 0; line-height: 1.8;">${fields.content || '在这里输入卡片内容...'}</p>
-</section>`
+</section>`;
+                }
             },
             {
                 id: 'card-color-bg',
@@ -92,17 +103,24 @@ const COMPONENTS = {
                 id: 'card-header',
                 name: '带标题栏卡片',
                 icon: '📋',
-                description: '顶部有标题栏的卡片',
+                description: '顶部有标题栏的卡片，可调阴影参数',
                 getFields: () => [
                     { key: 'title', label: '卡片标题', type: 'text', default: '卡片标题' },
                     { key: 'content', label: '卡片内容', type: 'textarea', default: '在这里输入卡片内容...' },
                     { key: 'headerBgColor', label: '标题栏颜色', type: 'color', default: 'inherit' },
-                    { key: 'bodyBgColor', label: '内容区底色', type: 'color', default: 'inherit' }
+                    { key: 'bodyBgColor', label: '内容区底色', type: 'color', default: 'inherit' },
+                    { key: 'shadowDir', label: '阴影方向', type: 'select', default: '右下', options: ['右下','左下','左上','右上','四边'] },
+                    { key: 'shadowSize', label: '阴影大小', type: 'select', default: '中', options: ['小','中','大'] },
+                    { key: 'shadowStrength', label: '阴影强弱', type: 'select', default: '中', options: ['弱','中','强'] }
                 ],
                 getHtml: (color, fields) => {
                     const headerBgColor = fields.headerBgColor === 'inherit' ? color : fields.headerBgColor;
                     const bodyBgColor = fields.bodyBgColor === 'inherit' ? '#ffffff' : fields.bodyBgColor;
-                    return `<section style="background-color: #ffffff; border-radius: 8px; margin: 16px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden;">
+                    const dir = fields.shadowDir || '右下';
+                    const size = fields.shadowSize || '中';
+                    const strength = fields.shadowStrength || '中';
+                    const shadowVal = buildBoxShadow(dir, size, strength, '0,0,0');
+                    return `<section style="border-radius: 8px; margin: 16px 0; box-shadow: ${shadowVal}; overflow: hidden;">
 <section style="background-color: ${headerBgColor}; padding: 12px 20px;">
 <p style="margin: 0; color: #ffffff; font-weight: 600; font-size: 16px;">${fields.title || '卡片标题'}</p>
 </section>
@@ -136,6 +154,27 @@ const COMPONENTS = {
         name: '标题装饰',
         icon: '✏️',
         items: [
+            {
+                id: 'title-text-shadow',
+                name: '文字阴影标题',
+                icon: '🔆',
+                description: '带文字阴影效果的标题，可调阴影方向、大小和强弱',
+                getFields: () => [
+                    { key: 'title', label: '标题文字', type: 'text', default: '标题文字' },
+                    { key: 'shadowDir', label: '阴影方向', type: 'select', default: '右下', options: ['右下','左下','左上','右上','四边'] },
+                    { key: 'shadowSize', label: '阴影大小', type: 'select', default: '中', options: ['小','中','大'] },
+                    { key: 'shadowStrength', label: '阴影强弱', type: 'select', default: '中', options: ['弱','中','强'] }
+                ],
+                getHtml: (color, fields) => {
+                    const dir = fields.shadowDir || '右下';
+                    const size = fields.shadowSize || '中';
+                    const strength = fields.shadowStrength || '中';
+                    const shadowVal = buildTextShadow(dir, size, strength, color);
+                    return `<section style="margin: 20px 0;">
+<p style="margin: 0; font-size: 20px; font-weight: 700; color: #333333; line-height: 1.4; text-shadow: ${shadowVal};">${fields.title || '标题文字'}</p>
+</section>`;
+                }
+            },
             {
                 id: 'title-left-bar',
                 name: '左竖线标题',

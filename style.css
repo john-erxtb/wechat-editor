@@ -2129,3 +2129,27 @@ html, body {
 .component-preview-body .component-input-area .input-fields-container {
     margin-bottom: 0;
 }
+
+/* ====== 选择字段样式 ====== */
+.select-fields-container {
+    margin-bottom: 10px;
+}
+
+.component-preview-body .select-field-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #333;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    appearance: auto;
+}
+
+.component-preview-body .select-field-group select:focus {
+    border-color: #667eea;
+    outline: none;
+}

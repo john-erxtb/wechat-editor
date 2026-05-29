@@ -2045,8 +2045,9 @@ function showComponentPreview(componentId, initialValues, initialColor) {
     if (fields.length === 0) {
         inputContainer.innerHTML = '<div class="no-input-hint">此组件无需输入内容</div>';
     } else {
-        // 分离普通字段和颜色字段
-        const normalFields = fields.filter(f => f.type !== 'color');
+        // 分离普通字段、选择字段和颜色字段
+        const normalFields = fields.filter(f => f.type !== 'color' && f.type !== 'select');
+        const selectFields = fields.filter(f => f.type === 'select');
         const colorFields = fields.filter(f => f.type === 'color');
         
         inputContainer.innerHTML = normalFields.map(field => {
@@ -2057,6 +2058,20 @@ function showComponentPreview(componentId, initialValues, initialColor) {
                 return '<div class="input-field-group"><label for="field-' + field.key + '">' + field.label + '</label><input type="text" id="field-' + field.key + '" data-key="' + field.key + '" value="' + val + '" placeholder="' + field.default + '"></div>';
             }
         }).join('');
+        
+        // 渲染选择字段
+        if (selectFields.length > 0) {
+            let selectHtml = '<div class="select-fields-container">';
+            selectFields.forEach(field => {
+                const val = initialValues && initialValues[field.key] !== undefined ? initialValues[field.key] : field.default;
+                const options = (field.options || []).map(opt => 
+                    '<option value="' + opt + '"' + (opt === val ? ' selected' : '') + '>' + opt + '</option>'
+                ).join('');
+                selectHtml += '<div class="input-field-group select-field-group"><label for="field-' + field.key + '">' + field.label + '</label><select id="field-' + field.key + '" data-key="' + field.key + '">' + options + '</select></div>';
+            });
+            selectHtml += '</div>';
+            inputContainer.innerHTML += selectHtml;
+        }
         
         // 渲染颜色字段
         if (colorFields.length > 0) {
@@ -2069,8 +2084,9 @@ function showComponentPreview(componentId, initialValues, initialColor) {
         }
         
         // 绑定实时更新事件
-        inputContainer.querySelectorAll('input[data-key], textarea[data-key]').forEach(input => {
-            input.addEventListener('input', updateModalPreview);
+        inputContainer.querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(el => {
+            el.addEventListener('input', updateModalPreview);
+            el.addEventListener('change', updateModalPreview);
         });
         
         // 绑定颜色字段事件
@@ -2189,7 +2205,7 @@ function updateModalPreview() {
     
     // 收集用户输入的值
     const fieldValues = {};
-    modal.querySelectorAll('.input-fields-container input[data-key], .input-fields-container textarea[data-key]').forEach(input => {
+    modal.querySelectorAll('.input-fields-container input[data-key], .input-fields-container textarea[data-key], .input-fields-container select[data-key]').forEach(input => {
         const key = input.dataset.key;
         const value = input.value;
         fieldValues[key] = value;
@@ -2411,7 +2427,7 @@ function insertComponent() {
         const fieldValues = {};
         
         if (modal) {
-            modal.querySelectorAll('.input-fields-container input[data-key], .input-fields-container textarea[data-key]').forEach(input => {
+            modal.querySelectorAll('.input-fields-container input[data-key], .input-fields-container textarea[data-key], .input-fields-container select[data-key]').forEach(input => {
                 const key = input.dataset.key;
                 const value = input.value;
                 fieldValues[key] = value;
@@ -2516,7 +2532,8 @@ function showComponentEditModal(component, fieldValues, color, textColor) {
     if (fields.length === 0) {
         inputContainer.innerHTML = '<div class="no-input-hint">此组件无需输入内容</div>';
     } else {
-        const normalFields = fields.filter(f => f.type !== 'color');
+        const normalFields = fields.filter(f => f.type !== 'color' && f.type !== 'select');
+        const selectFields = fields.filter(f => f.type === 'select');
         const colorFields = fields.filter(f => f.type === 'color');
         
         inputContainer.innerHTML = normalFields.map(field => {
@@ -2528,6 +2545,20 @@ function showComponentEditModal(component, fieldValues, color, textColor) {
             }
         }).join('');
         
+        // 渲染选择字段
+        if (selectFields.length > 0) {
+            let selectHtml = '<div class="select-fields-container">';
+            selectFields.forEach(field => {
+                const val = fieldValues[field.key] !== undefined ? fieldValues[field.key] : field.default;
+                const options = (field.options || []).map(opt => 
+                    '<option value="' + opt + '"' + (opt === val ? ' selected' : '') + '>' + opt + '</option>'
+                ).join('');
+                selectHtml += '<div class="input-field-group select-field-group"><label for="field-' + field.key + '">' + field.label + '</label><select id="field-' + field.key + '" data-key="' + field.key + '">' + options + '</select></div>';
+            });
+            selectHtml += '</div>';
+            inputContainer.innerHTML += selectHtml;
+        }
+        
         if (colorFields.length > 0) {
             let colorFieldsHtml = '';
             colorFields.forEach(field => {
@@ -2537,8 +2568,9 @@ function showComponentEditModal(component, fieldValues, color, textColor) {
             inputContainer.innerHTML += '<div class="color-fields-container">' + colorFieldsHtml + '</div>';
         }
         
-        inputContainer.querySelectorAll('input[data-key], textarea[data-key]').forEach(input => {
-            input.addEventListener('input', updateModalPreview);
+        inputContainer.querySelectorAll('input[data-key], textarea[data-key], select[data-key]').forEach(el => {
+            el.addEventListener('input', updateModalPreview);
+            el.addEventListener('change', updateModalPreview);
         });
         
         bindColorFieldEvents(modal);
@@ -2559,7 +2591,7 @@ function updateComponent() {
         const fieldValues = {};
         
         if (modal) {
-            modal.querySelectorAll('.input-fields-container input[data-key], .input-fields-container textarea[data-key]').forEach(input => {
+            modal.querySelectorAll('.input-fields-container input[data-key], .input-fields-container textarea[data-key], .input-fields-container select[data-key]').forEach(input => {
                 fieldValues[input.dataset.key] = input.value;
             });
             
