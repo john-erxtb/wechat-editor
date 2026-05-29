@@ -3,6 +3,48 @@
  * 包含各类可插入的排版组件，支持颜色自定义
  */
 
+// ====== 阴影辅助函数 ======
+function buildBoxShadow(dir, size, strength, rgbBase) {
+    const offsets = { '小': 2, '中': 4, '大': 8 };
+    const alphas = { '弱': 0.04, '中': 0.08, '强': 0.16 };
+    const o = offsets[size] || 4;
+    const a = alphas[strength] || 0.08;
+    const blur = o * 3;
+    const spread = 0;
+    const dirs = {
+        '右下': [o, o],
+        '左下': [-o, o],
+        '左上': [-o, -o],
+        '右上': [o, -o],
+        '四边': [0, 0]
+    };
+    const [x, y] = dirs[dir] || dirs['右下'];
+    if (dir === '四边') {
+        return `0 0 ${blur}px ${o}px rgba(${rgbBase},${a * 0.7})`;
+    }
+    return `${x}px ${y}px ${blur}px ${spread}px rgba(${rgbBase},${a})`;
+}
+
+function buildTextShadow(dir, size, strength, color) {
+    const offsets = { '小': 1, '中': 2, '大': 3 };
+    const alphas = { '弱': 0.15, '中': 0.3, '强': 0.5 };
+    const o = offsets[size] || 2;
+    const a = alphas[strength] || 0.3;
+    const blur = o;
+    const dirs = {
+        '右下': [o, o],
+        '左下': [-o, o],
+        '左上': [-o, -o],
+        '右上': [o, -o],
+        '四边': [0, 0]
+    };
+    const [x, y] = dirs[dir] || dirs['右下'];
+    if (dir === '四边') {
+        return `0 0 ${blur}px rgba(0,0,0,${a}), ${o*0.5}px 0 ${blur}px rgba(0,0,0,${a*0.5}), 0 ${o*0.5}px ${blur}px rgba(0,0,0,${a*0.5}), -${o*0.5}px 0 ${blur}px rgba(0,0,0,${a*0.5}), 0 -${o*0.5}px ${blur}px rgba(0,0,0,${a*0.5})`;
+    }
+    return `${x}px ${y}px ${blur}px rgba(0,0,0,${a})`;
+}
+
 // 组件库定义
 const COMPONENTS = {
     // ========== A. 段落卡片容器 ==========
